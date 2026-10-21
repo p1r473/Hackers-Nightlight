@@ -1,0 +1,9 @@
+.pio/
+private/
+*.elf
+*.map
+*.o
+test-lightjack
+test-lightjack.exe
+test-lightjack-adapter
+test-lightjack-adapter.exe

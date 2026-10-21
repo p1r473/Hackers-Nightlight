@@ -1,0 +1,61 @@
+[
+  {
+    "owner": "espressif",
+    "name": "toolchain-riscv32-esp",
+    "version": "8.4.0+2021r2-patch5",
+    "archive": {
+      "name": "toolchain-riscv32-esp-windows_amd64-8.4.0+2021r2-patch5.tar.gz",
+      "size": 258829021,
+      "checksum": {
+        "sha256": "55c5c36593d87021ff19857d99da17a85fe4d708e77333e98ff54a8ac0ed1804"
+      },
+      "system": [
+        "windows_amd64",
+        "windows_arm64"
+      ],
+      "download_url": "https://dl.registry.platformio.org/download/espressif/tool/toolchain-riscv32-esp/8.4.0+2021r2-patch5/toolchain-riscv32-esp-windows_amd64-8.4.0+2021r2-patch5.tar.gz"
+    }
+  },
+  {
+    "owner": "platformio",
+    "name": "framework-arduinoespressif32",
+    "version": "3.20017.241212+sha.dcc1105b",
+    "archive": {
+      "name": "framework-arduinoespressif32-3.20017.241212+sha.dcc1105b.tar.gz",
+      "size": 246321254,
+      "checksum": {
+        "sha256": "7dbcfb86f9dfd5ecf6c881ed8226239d9ef63f27e1e1a2ddd87a87762e2ffbc9"
+      },
+      "system": "*",
+      "download_url": "https://dl.registry.platformio.org/download/platformio/tool/framework-arduinoespressif32/3.20017.241212+sha.dcc1105b/framework-arduinoespressif32-3.20017.241212+sha.dcc1105b.tar.gz"
+    }
+  },
+  {
+    "owner": "platformio",
+    "name": "tool-esptoolpy",
+    "version": "2.40900.250804",
+    "archive": {
+      "name": "tool-esptoolpy-2.40900.250804.tar.gz",
+      "size": 509071,
+      "checksum": {
+        "sha256": "e15f7afad5b918667adf656a647f07cbffc8490a019a5d2b09bb42711d56f883"
+      },
+      "system": "*",
+      "download_url": "https://dl.registry.platformio.org/download/platformio/tool/tool-esptoolpy/2.40900.250804/tool-esptoolpy-2.40900.250804.tar.gz"
+    }
+  },
+  {
+    "owner": "platformio",
+    "name": "tool-scons",
+    "version": "4.40801.0",
+    "archive": {
+      "name": "tool-scons-4.40801.0.tar.gz",
+      "size": 483365,
+      "checksum": {
+        "sha256": "289b1abf389b730ab5a1018ed9fc84e22d301e0d16c64548eb9db5bf8ba59d06"
+      },
+      "system": "*",
+      "download_url": "https://dl.registry.platformio.org/download/platformio/tool/tool-scons/4.40801.0/tool-scons-4.40801.0.tar.gz"
+    }
+  }
+]

@@ -1,14 +1,18 @@
+// Lightjack additions, 2026-10-21: conditional Wyze driver and recovery startup.
 #include <Arduino.h>
 #include <components/system_manager.h>
 #include <components/wsl_bypasser/wsl_bypasser.h>
 #include <components/frame_analyzer/frame_analyzer_parser.h>
 #include <components/hccapx_serializer/hccapx_serializer.h>
 #include <components/pcap_serializer/pcap_serializer.h>
-#include <components/webserver/webserver.h>
+#include <components/WebServer/webserver.h>
 #include <components/wifi_controller/wifi_controller.h>
 #include <WiFi.h>
 #include "main/attack.h"
 
+#ifdef LIGHTJACK_WYZE_POC
+#include "lightjack/lightjack_adapter.h"
+#else
 #define KHZ 100
 static const char *const TAG = "tuya-globe";
 
@@ -128,7 +132,17 @@ MyCustomLightOutput output_red(19, 18, 3, 15);
 MyCustomLightOutput output_cold_white(19, 18, 4, 15);
 MyCustomLightOutput output_warm_white(19, 18, 5, 15);
 
+#endif
+
 void SystemManager::SetupSystem() {
+#ifdef LIGHTJACK_WYZE_POC
+    esp_err_t error = lightjack_prepare();
+    if (error != ESP_OK) {
+        Serial.printf("Lightjack startup stopped: %s\n", esp_err_to_name(error));
+        vTaskSuspend(NULL);
+        return;
+    }
+#else
     // Define brightness for each channel (0 - 255)
     uint8_t red_brightness = 0;
     uint8_t green_brightness = 0;
@@ -142,6 +156,8 @@ void SystemManager::SetupSystem() {
     output_red.setup(red_brightness, green_brightness, blue_brightness, warm_white_brightness, cold_white_brightness);
     output_cold_white.setup(red_brightness, green_brightness, blue_brightness, warm_white_brightness, cold_white_brightness);
     output_warm_white.setup(red_brightness, green_brightness, blue_brightness, warm_white_brightness, cold_white_brightness);
+
+#endif
 
     // Initialize other components
     wslBypasserInterface = new wslbypasser();
