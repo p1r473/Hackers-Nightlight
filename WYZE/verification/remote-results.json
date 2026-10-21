@@ -7,7 +7,7 @@
   "credentials_provisioned": false,
   "image": {
     "size_bytes": 1006432,
-    "sha256": "f0dc3308708439ddd7cab63ed1c3a668b49ffa52f9ab6e4db0c4ee963011cb43",
+    "sha256": "951e1931f697898468801036ca9efa80c860b01e487b758b138a4113cf399a47",
     "slot_size_bytes": 1966080,
     "chip": "ESP32-C3",
     "checksum_and_validation_hash": "valid"
@@ -21,6 +21,9 @@
   "tests": {
     "upstream_native_helper_cases": 56,
     "configuration_policy_checks": 147,
+    "private_provisioning_unittest_methods": 19,
+    "private_provisioning_evidence": "remote-provision-results.json",
+    "configured_then_unset_fixture_builds": "passed; no cleaning between builds",
     "actual_adapter_with_mock_boundaries_checks": 26,
     "base_lightjack_target_rebuild": "passed",
     "startup_wrapper_call_verified_in_final_elf": true,
@@ -45,7 +48,7 @@
     ]
   },
   "limitations": [
-    "Default provider is unprovisioned; no real connection was attempted.",
+    "Default provider is unprovisioned; no real connection was attempted. Private provisioning tooling and invalid-key build selection are verified, not operational authentication.",
     "Firmware host tests do not exercise SSH transport, radio, heap peaks or physical hardware. Separate TCP tool fixtures exercise actual loopback sockets only.",
     "Full transfer integrity, half-close, reconnect timing, performance and memory behavior remain unverified.",
     "Inherited HTTP management remains unauthenticated and shares the upstream AP password.",

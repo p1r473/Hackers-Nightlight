@@ -1,0 +1,39 @@
+{
+  "configured": {
+    "size_bytes": 1006688,
+    "sha256": "c218e8906a036e41952e9f324adfa17202604859882e831905188f980f4ba4c4",
+    "fixture_present": true,
+    "checksum_and_hash_valid": true,
+    "linked_flash_bytes": 978826,
+    "static_ram_bytes": 40324
+  },
+  "default": {
+    "size_bytes": 1006432,
+    "sha256": "951e1931f697898468801036ca9efa80c860b01e487b758b138a4113cf399a47",
+    "fixture_present": false,
+    "checksum_and_hash_valid": true,
+    "linked_flash_bytes": 978570,
+    "static_ram_bytes": 40324
+  },
+  "date": "2026-10-21",
+  "passed": true,
+  "unittest_methods": 19,
+  "cryptography": "48.0.1",
+  "python": "3.12",
+  "build_sequence": "configured invalid-key fixture, then unset environment and rebuild without cleaning",
+  "operational_credentials_provisioned": false,
+  "ssh_session_tested": false,
+  "hardware_tested": false,
+  "test_private_keys": "Known scalar 1/2 in memory only; no private-key files",
+  "configured_build_credentials": "Invalid NOT-A-KEY strings, not a functioning keypair",
+  "review_host": "FlyingDutchman",
+  "review_model": "qwen38-fast-27b-opt:latest",
+  "sources_sha256_lf": {
+    "tools/provision_remote.py": "b1ff8a5b069e30944d79c1248343c5dfebe24070173087419394da43a39bbdc1",
+    "tools/lightjack_remote_build.py": "f257ea409d19bd8edf43c062d216a3f3b7e39f8617a9f7be7c566e2189c13136",
+    "tools/requirements-remote.txt": "832a977b582192adda7bf81b97d71ed6e6a43d09a4ce414b8a1aa2813457cf6d",
+    "test/test_remote_provision.py": "1b4400dd74b653e42b6cefecebbf07c57b8d55a5ff4d4034e2ddbea2b6275e16",
+    "src/lightjack/remote_config.cpp": "11fe6282eec106739bc97e3ee5332ad84a57ce59a571bb6149451244d3a06b60",
+    "platformio.ini": "174c280bb431615945f1265b19ea8c0f139d496934e360be6ea3527317223532"
+  }
+}

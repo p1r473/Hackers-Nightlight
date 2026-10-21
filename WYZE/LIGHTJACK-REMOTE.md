@@ -14,9 +14,40 @@ The application uses the existing IDF APSTA interfaces, keeps station credential
 
 ## Current configuration boundary
 
-The weak `lightjack_remote_get_config()` provider deliberately returns empty fields. The default build stops before changing station configuration, allocating the worker or opening a connection. The actual SSH implementation remains linked in the image.
+Without `LIGHTJACK_REMOTE_CONFIG_DIR`, the weak `lightjack_remote_get_config()` provider returns empty fields. The default build stops before changing station configuration, allocating the worker or opening a connection. The actual SSH implementation remains linked in the image.
 
-Provisioning is unfinished. No user SSH keys have been read, copied, converted or generated for this prototype. Do not embed a desktop administration key in a bulb. A later per-device provisioning design needs its own reviewed credentials, storage and revocation process. The configuration validator checks structure only; libssh2 must still parse the keys and the relay must authorize them. The test fixtures are explicitly invalid cryptographic keys.
+The [private configuration tool](tools/provision_remote.py) validates supplied per-device credentials and creates a build header outside the source repository. It does not generate keys, contact a relay, install authorized keys, configure a service or flash a bulb. No operational SSH credentials have been provisioned for this prototype. Do not embed a desktop administration key in a bulb. Device credential issuance, relay authorization, storage and revocation still need a controlled trial.
+
+The host tool verifies the P256 client key pair cryptographically and checks its agreement with any supplied relay public key and fingerprint. The firmware validator checks structure only; libssh2 must still parse the configured keys and the relay must authorize them. Python validation uses publicly known mathematical test keys in memory only. Firmware build-selection and adapter fixtures use invalid `NOT-A-KEY` strings and cannot authenticate.
+
+## Private configuration workflow
+
+Use Python 3.12 or newer with the pinned dependency in [tools/requirements-remote.txt](tools/requirements-remote.txt). The ordinary unconfigured PlatformIO build does not need this Python dependency.
+
+The input is a private UTF-8 JSON object with these fields. Do not put it in this repository or a desktop `.ssh` directory. Obtain the relay fingerprint through a trusted channel; this tool does not discover or establish trust in an unknown relay.
+
+| Field | Required value |
+| --- | --- |
+| `ssid` | Station network name, 1 to 32 UTF-8 bytes |
+| `wifi_password` | WPA2 passphrase, 8 to 63 UTF-8 bytes |
+| `relay_ipv4`, `target_ipv4` | Literal unicast IPv4 addresses; hostnames and IPv6 are unsupported |
+| `relay_port`, `target_port` | Integer ports from 1 through 65535 |
+| `remote_port` | Relay listener port from 1024 through 65535 |
+| `username` | Relay account, 1 to 64 ASCII letters, digits, underscores or hyphens |
+| `private_key_pem` | Dedicated client key as unencrypted traditional `EC PRIVATE KEY` PEM, curve nistp256, with JSON-escaped newlines |
+| `public_key_ssh` | Matching single-line OpenSSH ECDSA nistp256 public key |
+| `host_sha256_hex` | Trusted relay host-key SHA256, either 64 hexadecimal characters or OpenSSH `SHA256:` form |
+| `relay_host_public_key` | Optional trusted ECDSA nistp256 host public key. May replace the fingerprint field; if both are supplied they must agree |
+
+NUL characters, unknown or duplicate JSON fields, wrong curves, mismatched keys, encrypted or malformed PEM, invalid ports and oversized fields are rejected. Host fingerprints are calculated from the SSH binary public-key blob, not its text representation.
+
+From `WYZE`, validate a private configuration without writing a bundle using `python tools/provision_remote.py --config PATH --check`, replacing `PATH` with the existing private JSON file. Create the bundle with `python tools/provision_remote.py --config PATH --output DIRECTORY`, choosing a new private directory outside the repository. These commands print only validation results and public-key fingerprints. The tool refuses to overwrite an existing directory. The input file and generated header contain secrets; restrict access and do not publish them. POSIX file permissions and Windows directory protection depend on the operating system and calling account; verify access permissions before using operational credentials.
+
+Set `LIGHTJACK_REMOTE_CONFIG_DIR` to that bundle directory for the build process, then run `pio run -e lightjack_wyze_ssh_poc`. The build script verifies the header hash before enabling the configured provider. It passes only a directory and feature flag to the compiler, never credential values. The manifest is a completeness and corruption check, not a signature or authorization mechanism. Keep the directory trusted and unchanged during the build.
+
+Configured firmware and build artifacts contain the supplied credentials in plaintext. Keep all of `.pio` private and never distribute that image as a shared kit image. Unset `LIGHTJACK_REMOTE_CONFIG_DIR` and rebuild to return to the credential-free configuration. Selecting a configuration does not upload an image or change any relay permissions.
+
+Run `python test/test_remote_provision.py` to exercise key matching, host pins, bounds, JSON rejection, byte-exact C escaping, interrupted bundle writes and build selection. Tests do not read desktop keys, write real private keys, connect to a relay or demonstrate device operation.
 
 ## Build and host checks
 
@@ -89,7 +120,7 @@ These limits make a hardware trial plausible; they do not prove that peak memory
 
 ## Work still required before claiming the POC
 
-1. Finish per-device credential provisioning and validate the actual key format and host pin against a controlled relay.
+1. Provision approved per-device credentials with the configuration tool and validate the actual key format and host pin against a controlled relay. Host validation and build selection alone do not prove authentication.
 2. Test a complete SSH session, wrong host key, rejected client key, unavailable relay and reconnect backoff.
 3. Transfer known binary data in both directions and compare hashes. Exercise half-close, slow consumers, interrupted transfers, idle expiry and excess connections.
 4. Verify the relay listener's actual binding and access restrictions. No external network exposure is implied by this source.
