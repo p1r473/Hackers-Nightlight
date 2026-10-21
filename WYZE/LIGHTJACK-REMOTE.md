@@ -106,6 +106,14 @@ python -m unittest discover -s test -p "test_remote_tcp*.py" -v
 
 Results in [verification/remote-tcp-results.json](verification/remote-tcp-results.json) cover the acceptance tools against real local sockets, including deliberately faulty peers. They do not prove SSH authentication, the forwarding path, radio behavior or bulb performance. An echo alone cannot identify which device forwarded the bytes, so reports explicitly set `ssh_or_device_identity_verified` to false. Correlate a future relay test with the bulb and relay session logs, then disconnect the bulb session and verify that the relay port stops forwarding. Test wrong host pins and unauthorized keys separately.
 
+## Desktop SSH reference test
+
+The acceptance tools have also passed a real desktop OpenSSH reference test using an existing Windows SSH service and existing credentials. This was a same-host test, separate from the ESP32 firmware. Two authenticated SSH sessions completed five transfer cases, totaling 3,211,264 echoed payload bytes. Cases included three 1 MiB transfers, a slow receiver, an empty stream, and a 64 KiB transfer after establishing a second session. Binary equality, SHA256, write half-close and receive EOF were checked.
+
+The SSH reverse listener and echo service were confirmed bound to `127.0.0.1`. Closing each owned SSH process removed its exact forwarding port and made connection attempts fail, while the echo endpoint still worked directly. The echo process was then stopped and its listener removal verified. SSH configuration, private key and known-hosts files were unchanged. Separate checks rejected an untrusted host identity and a connection with authentication methods disabled. The mechanism follows OpenSSH's documented [remote forwarding](https://man.openbsd.org/ssh#R) and [strict host checking](https://man.openbsd.org/ssh_config#StrictHostKeyChecking).
+
+The reference negotiated Curve25519, an Ed25519 host key and ChaCha20-Poly1305, using an existing Ed25519 client identity. A separate attempt to select the bulb's P256 host algorithm failed because this server offers P384, RSA and Ed25519 host keys. The server was left unchanged. These results validate the desktop reference path and acceptance tools, not the bulb's selected algorithms, libssh2 implementation, authentication, throughput or recovery. A dedicated compatible relay and approved per-device credential remain necessary. See [the scoped reference evidence](verification/openssh-reference-results.json).
+
 ## Memory profile and upstream changes
 
 - One active channel, one pending channel, one deferred-close slot and one reverse listener.
