@@ -31,7 +31,10 @@
     "tcp_tool_loopback_unittest_methods": 21,
     "tcp_tool_evidence": "remote-tcp-results.json",
     "desktop_openssh_reference_sessions": 2,
-    "desktop_openssh_reference_evidence": "openssh-reference-results.json"
+    "desktop_openssh_reference_evidence": "openssh-reference-results.json",
+    "desktop_p256_sessions": 2,
+    "desktop_p256_rejection_checks": 7,
+    "desktop_p256_relay_evidence": "p256-relay-results.json"
   },
   "test_compilers": {
     "native_policy": "TinyCC 0.9.27",
@@ -57,5 +60,7 @@
     "All generated images are excluded from the source package."
   ],
   "ssh_session_scope": "ESP32 firmware and libssh2; remains untested",
-  "desktop_openssh_reference_tested": true
+  "desktop_openssh_reference_tested": true,
+  "desktop_p256_relay_tested": true,
+  "credential_scope": "Bulb firmware; dedicated desktop test credentials are separate"
 }

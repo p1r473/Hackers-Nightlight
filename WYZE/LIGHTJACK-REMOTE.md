@@ -6,7 +6,7 @@ Added 2026-10-21. This is an optional source prototype, not a working remote-acc
 
 The `lightjack_wyze_ssh_poc` environment extends the existing bulb target. It reuses Playmiel's reverse-SSH library and libssh2 instead of introducing a new transport protocol or custom relay daemon. A configured bulb would make an outbound SSH connection to an OpenSSH relay. A TCP listener on that relay would forward to one explicitly configured IPv4 address and port reachable by the bulb.
 
-The source requests a loopback-only relay listener at `127.0.0.1`. Remote clients would reach it through separately authenticated access to the relay. The relay must also enforce loopback binding and forwarding restrictions. No relay has been configured or deployed.
+The source requests a loopback-only relay listener at `127.0.0.1`. Remote clients would reach it through separately authenticated access to the relay. The relay must also enforce loopback binding and forwarding restrictions. A temporary desktop P256 relay has passed the controlled tests below and was stopped afterward. No persistent or public relay is deployed.
 
 Configuration requires a WPA2 station network, literal relay and target IPv4 addresses, client keys, and a trusted 64-character SHA256 hex fingerprint of the relay's ECDSA p256 host key. Host-key verification occurs before client authentication. Empty pins and disabled verification are rejected. Password authentication and accepting an unknown server key are unavailable in this target. Algorithm selection is ECDH p256, ECDSA p256 host key, AES-128-CTR and HMAC-SHA256.
 
@@ -16,7 +16,7 @@ The application uses the existing IDF APSTA interfaces, keeps station credential
 
 Without `LIGHTJACK_REMOTE_CONFIG_DIR`, the weak `lightjack_remote_get_config()` provider returns empty fields. The default build stops before changing station configuration, allocating the worker or opening a connection. The actual SSH implementation remains linked in the image.
 
-The [private configuration tool](tools/provision_remote.py) validates supplied per-device credentials and creates a build header outside the source repository. It does not generate keys, contact a relay, install authorized keys, configure a service or flash a bulb. No operational SSH credentials have been provisioned for this prototype. Do not embed a desktop administration key in a bulb. Device credential issuance, relay authorization, storage and revocation still need a controlled trial.
+The [private configuration tool](tools/provision_remote.py) validates supplied per-device credentials and creates a build header outside the source repository. It does not generate keys, contact a relay, install authorized keys, configure a service or flash a bulb. Dedicated P256 test identities have been generated and authenticated in a desktop-only trial, but no operational credentials have been embedded in bulb firmware. Do not embed a desktop administration key in a bulb. Device provisioning, storage and revocation still need a controlled hardware trial.
 
 The host tool verifies the P256 client key pair cryptographically and checks its agreement with any supplied relay public key and fingerprint. The firmware validator checks structure only; libssh2 must still parse the configured keys and the relay must authorize them. Python validation uses publicly known mathematical test keys in memory only. Firmware build-selection and adapter fixtures use invalid `NOT-A-KEY` strings and cannot authenticate.
 
@@ -112,7 +112,17 @@ The acceptance tools have also passed a real desktop OpenSSH reference test usin
 
 The SSH reverse listener and echo service were confirmed bound to `127.0.0.1`. Closing each owned SSH process removed its exact forwarding port and made connection attempts fail, while the echo endpoint still worked directly. The echo process was then stopped and its listener removal verified. SSH configuration, private key and known-hosts files were unchanged. Separate checks rejected an untrusted host identity and a connection with authentication methods disabled. The mechanism follows OpenSSH's documented [remote forwarding](https://man.openbsd.org/ssh#R) and [strict host checking](https://man.openbsd.org/ssh_config#StrictHostKeyChecking).
 
-The reference negotiated Curve25519, an Ed25519 host key and ChaCha20-Poly1305, using an existing Ed25519 client identity. A separate attempt to select the bulb's P256 host algorithm failed because this server offers P384, RSA and Ed25519 host keys. The server was left unchanged. These results validate the desktop reference path and acceptance tools, not the bulb's selected algorithms, libssh2 implementation, authentication, throughput or recovery. A dedicated compatible relay and approved per-device credential remain necessary. See [the scoped reference evidence](verification/openssh-reference-results.json).
+The reference negotiated Curve25519, an Ed25519 host key and ChaCha20-Poly1305, using an existing Ed25519 client identity. A separate attempt to select the bulb's P256 host algorithm failed because this server offers P384, RSA and Ed25519 host keys. The existing server was left unchanged. These results validate the original desktop reference path and acceptance tools, not the bulb's selected algorithms, libssh2 implementation, authentication, throughput or recovery. See [the scoped reference evidence](verification/openssh-reference-results.json) and the subsequent compatible desktop trial below.
+
+## Dedicated P256 desktop relay trial
+
+After explicit approval, separate P256 client and host identities were generated with file access restricted to the owning Windows user and SYSTEM. A separate foreground OpenSSH server listened only at `127.0.0.1:22222` and permitted a reverse listener only at `127.0.0.1:18080`. A process supervisor limited the trial to 15 minutes and removed its children on exit. The normal SSH service, its authorization and existing keys were unchanged.
+
+Two authenticated sessions negotiated ECDH P256, ECDSA P256 client and host keys, AES-128-CTR and HMAC-SHA256. Four transfer cases echoed 2,162,688 payload bytes: two 1 MiB transfers including a slow receiver, an empty stream, and 64 KiB through a second session. Exact bytes, SHA256, write half-close and receive EOF passed. The seven negative checks rejected unknown host trust, a wrong P256 identity, command execution, shell access, SFTP, local-forward channels and an unapproved remote port.
+
+Stopping each client removed its reverse listener. Final cleanup removed the server and echo listeners and verified that the existing SSH files and service were unchanged. The dedicated test keys remain private; no key or credential-bearing image is included here. See [the P256 relay evidence](verification/p256-relay-results.json).
+
+This proves the selected relay algorithms and desktop access restrictions. It does not run the bulb firmware or validate its libssh2 backend, provisioning, radio, reconnect timing, memory or performance. The loopback server cannot be reached by a physical bulb; a later trial needs a separately approved laboratory network binding. The current vendored mbedTLS backend disables Ed25519, so this POC uses P256 for compatibility. Existing desktop Ed25519 identities need not be replaced.
 
 ## Memory profile and upstream changes
 
@@ -128,10 +138,10 @@ These limits make a hardware trial plausible; they do not prove that peak memory
 
 ## Work still required before claiming the POC
 
-1. Provision approved per-device credentials with the configuration tool and validate the actual key format and host pin against a controlled relay. Host validation and build selection alone do not prove authentication.
-2. Test a complete SSH session, wrong host key, rejected client key, unavailable relay and reconnect backoff.
-3. Transfer known binary data in both directions and compare hashes. Exercise half-close, slow consumers, interrupted transfers, idle expiry and excess connections.
-4. Verify the relay listener's actual binding and access restrictions. No external network exposure is implied by this source.
+1. Provision approved per-device credentials into a private bulb image and validate its actual key format and host pin against a controlled relay. Desktop authentication does not prove firmware authentication.
+2. On the bulb, test a complete SSH session, wrong host key, rejected client key, unavailable relay and reconnect backoff.
+3. Through the bulb, transfer known binary data in both directions and compare hashes. Exercise half-close, slow consumers, interrupted transfers, idle expiry and excess connections.
+4. Verify the final lab relay binding and access restrictions for the actual bulb network. The completed desktop trial covers localhost only and authorizes no external exposure.
 5. On a backed-up bulb, verify physical recovery, normal lighting, peak heap, stack margin, useful throughput and sustained stability. The bulbs have not yet been tested.
 6. Harden the inherited shared-password, unauthenticated HTTP management before any product release. The SSH transport does not protect that separate interface.
 

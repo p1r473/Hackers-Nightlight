@@ -1,0 +1,150 @@
+{
+  "scope": "desktop_p256_loopback_relay",
+  "passed": true,
+  "tests": [
+    {
+      "name": "unknown_host_trust_rejected",
+      "passed": true
+    },
+    {
+      "name": "wrong_p256_identity_rejected",
+      "passed": true
+    },
+    {
+      "name": "exec_rejected",
+      "passed": true
+    },
+    {
+      "name": "shell_rejected",
+      "passed": true
+    },
+    {
+      "name": "sftp_rejected",
+      "passed": true
+    },
+    {
+      "name": "local_forward_channel_rejected",
+      "passed": true
+    },
+    {
+      "name": "unapproved_remote_port_rejected",
+      "passed": true
+    }
+  ],
+  "sessions": [
+    {
+      "session": 1,
+      "authenticated": true,
+      "client_key": "ecdsa-sha2-nistp256",
+      "host_key": "ecdsa-sha2-nistp256",
+      "kex": "ecdh-sha2-nistp256",
+      "cipher": "aes128-ctr",
+      "mac": "hmac-sha2-256",
+      "transfers": [
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 1048576,
+          "bytes_received": 1048576,
+          "chunk": 257,
+          "sha256": "10af19e52dce99edfe977c2ee72fb396dccac9147fd834e1cd289d79fa0605e9",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        },
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 1048576,
+          "bytes_received": 1048576,
+          "chunk": 4096,
+          "sha256": "10af19e52dce99edfe977c2ee72fb396dccac9147fd834e1cd289d79fa0605e9",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0.02,
+          "ssh_or_device_identity_verified": false
+        },
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 0,
+          "bytes_received": 0,
+          "chunk": 1,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        }
+      ],
+      "listener_removed_after_client_stop": true
+    },
+    {
+      "session": 2,
+      "authenticated": true,
+      "client_key": "ecdsa-sha2-nistp256",
+      "host_key": "ecdsa-sha2-nistp256",
+      "kex": "ecdh-sha2-nistp256",
+      "cipher": "aes128-ctr",
+      "mac": "hmac-sha2-256",
+      "transfers": [
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 65536,
+          "bytes_received": 65536,
+          "chunk": 17,
+          "sha256": "ac8be2a39ab46f34c4b4d062ac62b4901a01943edb466e9f5ca12fa34dfa68e4",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        }
+      ],
+      "listener_removed_after_client_stop": true
+    }
+  ],
+  "bulb_tested": false,
+  "esp32_libssh2_tested": false,
+  "firewall_changed": false,
+  "existing_service_configuration_changed": false,
+  "lifetime_limit_seconds": 900,
+  "exact_key_configuration_check_passed": true,
+  "dedicated_listener_loopback_only": true,
+  "deadline_expired": false,
+  "cleanup_verified": true,
+  "existing_ssh_files_unchanged": true,
+  "existing_service_unchanged": true,
+  "date": "2026-10-21",
+  "same_host_only": true,
+  "public_performance_claim": false,
+  "test_credentials_generated": true,
+  "credentials_embedded_in_firmware": false,
+  "persistent_relay_deployed": false,
+  "existing_desktop_key_reused_in_bulb": false,
+  "raw_evidence_sha256": "36c0c6259fb6b31568c24d99c8f1242ef95350285075d54eca556f1d5592805b",
+  "total_echo_payload_bytes": 2162688,
+  "transfer_cases": 4,
+  "credential_permissions": {
+    "protected": true,
+    "allowed_principals": [
+      "owning_user",
+      "SYSTEM"
+    ],
+    "private_keys_in_public_artifacts": false
+  },
+  "limitations": [
+    "Desktop OpenSSH client and server only; no ESP32 firmware or its libssh2 transport executed.",
+    "The second session is a desktop reconnection, not validation of firmware reconnect backoff.",
+    "Only loopback was exposed. A physical bulb requires separately approved lab-network reachability.",
+    "Private firmware provisioning, device memory, radio behavior, throughput and stability remain untested.",
+    "A loopback echo result alone does not identify the forwarder; authenticated SSH logs and listener teardown were checked separately."
+  ],
+  "review": {
+    "direct_source_and_runtime_checks": true,
+    "additional_local_model_review": "unavailable: primary and permitted fallback Ollama endpoints could not be reached",
+    "cloud_fallback_used": false
+  },
+  "local_harness_sha256_lf": {
+    "work/lightjack-relay-test.py": "f06fb7699eb8eebbda31cfcc22598e1a12a9a39b73e5996aaf66ad749dc9b4ac",
+    "work/lightjack-relay-prepare.py": "f279b51ce48e16a091b977ce742667028731a7e24d2096aa5f5dfa62369dec2b",
+    "work/set-lightjack-key-acl.ps1": "f4e9eb768b2d4a0f11789ffce3eeac20e00f19145a1f45c4983d14ef5eaf4b12"
+  }
+}
