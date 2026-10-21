@@ -1,0 +1,81 @@
+# Lightjack remote TCP prototype
+
+Added 2026-10-21. This is an optional source prototype, not a working remote-access product or an installation release. Read [the bulb integration notes](LIGHTJACK.md) first.
+
+## What is implemented
+
+The `lightjack_wyze_ssh_poc` environment extends the existing bulb target. It reuses Playmiel's reverse-SSH library and libssh2 instead of introducing a new transport protocol or custom relay daemon. A configured bulb would make an outbound SSH connection to an OpenSSH relay. A TCP listener on that relay would forward to one explicitly configured IPv4 address and port reachable by the bulb.
+
+The source requests a loopback-only relay listener at `127.0.0.1`. Remote clients would reach it through separately authenticated access to the relay. The relay must also enforce loopback binding and forwarding restrictions. No relay has been configured or deployed.
+
+Configuration requires a WPA2 station network, literal relay and target IPv4 addresses, client keys, and a trusted 64-character SHA256 hex fingerprint of the relay's ECDSA p256 host key. Host-key verification occurs before client authentication. Empty pins and disabled verification are rejected. Password authentication and accepting an unknown server key are unavailable in this target. Algorithm selection is ECDH p256, ECDSA p256 host key, AES-128-CTR and HMAC-SHA256.
+
+The application uses the existing IDF APSTA interfaces, keeps station credentials in RAM, and runs the tunnel in one worker. It attempts the initial SSH connection explicitly, delegates reconnect backoff to the library after connection failures, and closes the session when station connectivity is lost. If tunnel initialization fails, remote access stays off until reboot. The existing light controls and recovery startup guard remain present.
+
+## Current configuration boundary
+
+The weak `lightjack_remote_get_config()` provider deliberately returns empty fields. The default build stops before changing station configuration, allocating the worker or opening a connection. The actual SSH implementation remains linked in the image.
+
+Provisioning is unfinished. No user SSH keys have been read, copied, converted or generated for this prototype. Do not embed a desktop administration key in a bulb. A later per-device provisioning design needs its own reviewed credentials, storage and revocation process. The configuration validator checks structure only; libssh2 must still parse the keys and the relay must authorize them. The test fixtures are explicitly invalid cryptographic keys.
+
+## Build and host checks
+
+Use the pinned PlatformIO Core and packages described in [LIGHTJACK.md](LIGHTJACK.md). Compile from `WYZE` with:
+
+```sh
+pio run -e lightjack_wyze_ssh_poc
+```
+
+This target uses C++17. Vendor sources and licenses are included under `third_party/lightjack-ssh`; no floating SSH dependency is downloaded. Arduino supplies the mbedTLS implementation. The same upload/erase guard applies. Do not flash generated bootloader or partition images.
+
+With a C and C++17 compiler, the application policy and actual adapter can be exercised without a network or device:
+
+```sh
+cc -Iinclude src/lightjack/remote_policy.c test/test_remote_policy.c -o test-remote-policy
+./test-remote-policy
+cc -Iinclude -c src/lightjack/remote_policy.c -o remote-policy.o
+c++ -std=c++17 -Itest/ssh_stubs -Iinclude test/test_remote_adapter.cpp remote-policy.o -o test-remote-adapter
+./test-remote-adapter
+python test/test_upload_guard.py
+```
+
+The adapter tests compile the real adapter against mocked SDK and tunnel boundaries. They check fail-closed configuration, setter failure, station/task failures, initial connection, reconnect delegation, Wi-Fi loss, and duplicate startup. They do not perform SSH or emulate a radio.
+
+The included upstream helper tests can be run with:
+
+```sh
+python tools/test_remote_upstream.py --cc cc --cxx c++
+```
+
+Recorded evidence is in [verification/remote-results.json](verification/remote-results.json). The current image is 1,006,432 bytes in a 1,966,080-byte application slot. Reported static RAM is 40,324 bytes, which excludes heap, worker stack, packet queues and cryptographic runtime allocations.
+
+## Memory profile and upstream changes
+
+- One active channel, one pending channel, one deferred-close slot and one reverse listener.
+- Two 8 KiB directional rings, two 1 KiB prepend buffers and two 1 KiB transport buffers. The worker requests a 32 KiB stack.
+- Advertised SSH channel window 16 KiB and maximum channel packet 4 KiB. Default socket receive/send buffer requests are 8 KiB.
+- Fifteen-second TCP connect deadline and libssh2 blocking-operation timeout. These are per-operation limits, not a total session-setup deadline.
+- Explicit host pin and algorithm requirements, and a thin compatibility header for the selected ESP-IDF port.
+- Local package manifests replace an upstream reference to a nonexistent `libssh2_esp` tag `1.1.1`.
+- Source line endings and comment/log punctuation normalized. Original notices retained.
+
+These limits make a hardware trial plausible; they do not prove that peak memory fits. Inspect heap, largest free block and worker stack high-water readings under sustained and interrupted traffic. The upstream dropped-byte accessor is a constant zero, so it is deliberately not presented as a measured statistic.
+
+## Work still required before claiming the POC
+
+1. Finish per-device credential provisioning and validate the actual key format and host pin against a controlled relay.
+2. Test a complete SSH session, wrong host key, rejected client key, unavailable relay and reconnect backoff.
+3. Transfer known binary data in both directions and compare hashes. Exercise half-close, slow consumers, interrupted transfers, idle expiry and excess connections.
+4. Verify the relay listener's actual binding and access restrictions. No external network exposure is implied by this source.
+5. On a backed-up bulb, verify physical recovery, normal lighting, peak heap, stack margin, useful throughput and sustained stability. The bulbs have not yet been tested.
+6. Harden the inherited shared-password, unauthenticated HTTP management before any product release. The SSH transport does not protect that separate interface.
+
+## Sources and licenses
+
+- Reverse tunnel: [playmiel/ESP-Reverse_Tunneling_Libssh2](https://github.com/playmiel/ESP-Reverse_Tunneling_Libssh2), commit `8b3eba99ae696046a5aeb3db6488e1005616b08a`, MIT. [Notice](third_party/lightjack-ssh/reverse-tunnel/LICENSE).
+- ESP port: [playmiel/libssh2_esp](https://github.com/playmiel/libssh2_esp), commit `378f0bd47900bffacbf29cac328c6e9b5391c886`, BSD-3-Clause. [Notice](third_party/lightjack-ssh/libssh2/LICENSE-port).
+- libssh2 submodule: [libssh2/libssh2](https://github.com/libssh2/libssh2), commit `455f062236fdd5deba9abb909dbe3b86463a23d8`, version `1.11.2_DEV`. This is a development snapshot, not a claim that release 1.11.2 was audited. [Notice](third_party/lightjack-ssh/libssh2/COPYING).
+- Unity helper-test framework: [ThrowTheSwitch/Unity](https://github.com/ThrowTheSwitch/Unity), tag `v2.6.1`, commit `cbcd08fa7de711053a3deec6339ee89cad5d2697`, MIT. [Notice](test/vendor/unity/LICENSE.txt).
+- Lightjack glue and integration: GPL-3.0-only, as part of this existing GPL application. Preserve all third-party notices in a distribution.
+
+The exact source selections and original checkout hashes are recorded in [UPSTREAM.json](third_party/lightjack-ssh/UPSTREAM.json); current vendor-file hashes are in [VENDORED.json](third_party/lightjack-ssh/VENDORED.json).

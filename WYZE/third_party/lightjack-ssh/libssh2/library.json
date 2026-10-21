@@ -1,0 +1,14 @@
+{
+  "name": "lightjack-libssh2",
+  "version": "1.11.2-dev-lightjack.1",
+  "license": "BSD-3-Clause",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "build": {
+    "flags": [
+      "-DHAVE_CONFIG_H",
+      "-DLIBSSH2_MBEDTLS",
+      "-DLIBSSH2_NO_ZLIB"
+    ]
+  }
+}

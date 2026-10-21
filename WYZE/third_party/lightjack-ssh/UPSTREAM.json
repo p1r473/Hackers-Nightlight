@@ -1,0 +1,505 @@
+{
+  "sources": {
+    "reverse_tunnel": {
+      "url": "https://github.com/playmiel/ESP-Reverse_Tunneling_Libssh2",
+      "commit": "8b3eba99ae696046a5aeb3db6488e1005616b08a"
+    },
+    "port": {
+      "url": "https://github.com/playmiel/libssh2_esp",
+      "commit": "378f0bd47900bffacbf29cac328c6e9b5391c886"
+    },
+    "libssh2": {
+      "url": "https://github.com/libssh2/libssh2",
+      "commit": "455f062236fdd5deba9abb909dbe3b86463a23d8"
+    }
+  },
+  "packaging": "Selected C sources match port CMakeLists; all headers retained. Framework supplies mbedTLS. Local manifests replace the nonexistent upstream dependency tag 1.1.1. LF endings and comment/log punctuation normalized.",
+  "files": [
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/channel_close_progress.h",
+      "destination": "reverse-tunnel/src/channel_close_progress.h",
+      "upstream_sha256": "97bac8897067d5bab408fd5eb9e5410aeb19e28aec4049cb76863d7b96f90786",
+      "copied_sha256": "97bac8897067d5bab408fd5eb9e5410aeb19e28aec4049cb76863d7b96f90786"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/channel_inactivity.h",
+      "destination": "reverse-tunnel/src/channel_inactivity.h",
+      "upstream_sha256": "4650b5ff6480ec93f0a54861e0c23d55269791bfe28ec6d0bb1e354db5dc3f90",
+      "copied_sha256": "4650b5ff6480ec93f0a54861e0c23d55269791bfe28ec6d0bb1e354db5dc3f90"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/channel_slot_alloc.h",
+      "destination": "reverse-tunnel/src/channel_slot_alloc.h",
+      "upstream_sha256": "e0becbc1130e07dff35032e55ec0b800bff3e8938905374a65f8a446935244df",
+      "copied_sha256": "e0becbc1130e07dff35032e55ec0b800bff3e8938905374a65f8a446935244df"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/circuit_breaker.h",
+      "destination": "reverse-tunnel/src/circuit_breaker.h",
+      "upstream_sha256": "49742a39eb1147e78feea560942cc6cec653a9ad5ddad2faf0a503ccc94cf6d4",
+      "copied_sha256": "019eaa97b5fc0efd868aac349cf410d31c1c36851e348629f9ffb0f63a3dc865"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ESP-Reverse_Tunneling_Libssh2.h",
+      "destination": "reverse-tunnel/src/ESP-Reverse_Tunneling_Libssh2.h",
+      "upstream_sha256": "65f071a6aa6317398d8022f150b46d6a59c8ec1bd5c99139f25b61ea1f89da88",
+      "copied_sha256": "65f071a6aa6317398d8022f150b46d6a59c8ec1bd5c99139f25b61ea1f89da88"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/forward_accept_diag.h",
+      "destination": "reverse-tunnel/src/forward_accept_diag.h",
+      "upstream_sha256": "0196c378c76ac4ed7957f4f2b75c86b956ca4528a89e9b11cba512f2bf63ce29",
+      "copied_sha256": "0196c378c76ac4ed7957f4f2b75c86b956ca4528a89e9b11cba512f2bf63ce29"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/forward_accept_error.h",
+      "destination": "reverse-tunnel/src/forward_accept_error.h",
+      "upstream_sha256": "cfb30c6ae1e90d90f9ba91fbb83bc37f47d49d2440ff0b52b0693c21d440312d",
+      "copied_sha256": "cfb30c6ae1e90d90f9ba91fbb83bc37f47d49d2440ff0b52b0693c21d440312d"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/logger.cpp",
+      "destination": "reverse-tunnel/src/logger.cpp",
+      "upstream_sha256": "84f03e479a3aaab90653ea367ddf4d145f127747a9803a68888060e99d4106bd",
+      "copied_sha256": "84f03e479a3aaab90653ea367ddf4d145f127747a9803a68888060e99d4106bd"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/logger.h",
+      "destination": "reverse-tunnel/src/logger.h",
+      "upstream_sha256": "198ae351b2a3e240c997e0673c7c53338f34c008582a1521f74e54ebd957404e",
+      "copied_sha256": "198ae351b2a3e240c997e0673c7c53338f34c008582a1521f74e54ebd957404e"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/memory_fixes.h",
+      "destination": "reverse-tunnel/src/memory_fixes.h",
+      "upstream_sha256": "ff8c9594450a8461bfb13802e06207c2ae3e2de7ed4673644def6fee85f48812",
+      "copied_sha256": "ff8c9594450a8461bfb13802e06207c2ae3e2de7ed4673644def6fee85f48812"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/network_optimizations.h",
+      "destination": "reverse-tunnel/src/network_optimizations.h",
+      "upstream_sha256": "9ff4609f56800055238b2682be1a41aeb13a663645d860672daa0a7611d88c7c",
+      "copied_sha256": "9ff4609f56800055238b2682be1a41aeb13a663645d860672daa0a7611d88c7c"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/prepend_buffer.h",
+      "destination": "reverse-tunnel/src/prepend_buffer.h",
+      "upstream_sha256": "258202f16afc4ccc2130af6dfa3925afee89949738a39df2b9d5836d235d0a9a",
+      "copied_sha256": "edc4b2da1dc28e0c33b82ddc9454f2bf6aab7517fcf96de924419853a795e09d"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ring_buffer.h",
+      "destination": "reverse-tunnel/src/ring_buffer.h",
+      "upstream_sha256": "dc8b13f622bb49fa4a4edda1e6a93ff3772249babe9f6930c846c0d8d970e8e2",
+      "copied_sha256": "7dafb6e2e24741d84b06d45f6d5f933fdce905de8c0ba860ad0a7222b37ba523"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_channel.cpp",
+      "destination": "reverse-tunnel/src/ssh_channel.cpp",
+      "upstream_sha256": "0e79d0fd64bd4823c071ea1efac7eb3205442aa3ccff23d7c21211532bb5817e",
+      "copied_sha256": "277111d83ae991911f432f7c1e0386a6782cad9b8fc6c7d62217626d39bec83f"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_channel.h",
+      "destination": "reverse-tunnel/src/ssh_channel.h",
+      "upstream_sha256": "78a816ee93a0ca309eb77b3395573b5a8c8da8b6026e2ff9ad58979c4681c31a",
+      "copied_sha256": "a5ac96a0474aaedc09e8c18ac05f3683469fd1dcf689d070bf2a68cff511840b"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_config.cpp",
+      "destination": "reverse-tunnel/src/ssh_config.cpp",
+      "upstream_sha256": "2a588b1ab2abf42f946a372885f7e8059b3e055c05a258616e57d1063e3f4b67",
+      "copied_sha256": "2a588b1ab2abf42f946a372885f7e8059b3e055c05a258616e57d1063e3f4b67"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_config.h",
+      "destination": "reverse-tunnel/src/ssh_config.h",
+      "upstream_sha256": "396b65dc019cab9de8eb3e157704af95b4ac565a45975f09366d0cb19d07e1c1",
+      "copied_sha256": "396b65dc019cab9de8eb3e157704af95b4ac565a45975f09366d0cb19d07e1c1"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_config_validators.h",
+      "destination": "reverse-tunnel/src/ssh_config_validators.h",
+      "upstream_sha256": "18941f7a1272d0de45bd11727acf0f64372f613dff4341fb34c54ad87430dcef",
+      "copied_sha256": "1a84c70e854f8a18702895d1680c04cbf12c7d2abc4c80bf5aa784df5e8a9661"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_session.cpp",
+      "destination": "reverse-tunnel/src/ssh_session.cpp",
+      "upstream_sha256": "9ed4afad7b1ad5409dc7831cbebe2782b044af2e66442f726e9142e6954bf04c",
+      "copied_sha256": "60b7de5e63c370b02ebefa81040286dbe56e362de203fafaab0c32b1e3a628ed"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_session.h",
+      "destination": "reverse-tunnel/src/ssh_session.h",
+      "upstream_sha256": "970ca35a3aed52c89603ca3e5fa785f79a1a2f8041c37cb24987f9c36e7c03be",
+      "copied_sha256": "970ca35a3aed52c89603ca3e5fa785f79a1a2f8041c37cb24987f9c36e7c03be"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_transport.cpp",
+      "destination": "reverse-tunnel/src/ssh_transport.cpp",
+      "upstream_sha256": "48656e82ba22429cdc1784916387bf93fdefd0c95c54e830a740b0914fd586bc",
+      "copied_sha256": "7d8a72cdc6fe6dd72199c9dd67767816870bdfa9937b1519e6d00769a8ee195a"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_transport.h",
+      "destination": "reverse-tunnel/src/ssh_transport.h",
+      "upstream_sha256": "f35c040a949d9ae191ca787d882e0b18cf90a0746a81c41e1c4b45ed38728396",
+      "copied_sha256": "f35c040a949d9ae191ca787d882e0b18cf90a0746a81c41e1c4b45ed38728396"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_tunnel.cpp",
+      "destination": "reverse-tunnel/src/ssh_tunnel.cpp",
+      "upstream_sha256": "274edc64be701b9456fa5d223fc82fa6d51c6961f90ab20476c4cfb8569af07c",
+      "copied_sha256": "befa7d5282b95f41aebb9e44d8bd7f4af1d38093f81e1eb2710b98c203a94ca2"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/src/ssh_tunnel.h",
+      "destination": "reverse-tunnel/src/ssh_tunnel.h",
+      "upstream_sha256": "894319403b847f0312f71b3c584fbab76aa6268e17fd69ee46d828ea9d24be52",
+      "copied_sha256": "894319403b847f0312f71b3c584fbab76aa6268e17fd69ee46d828ea9d24be52"
+    },
+    {
+      "source": "ESP-Reverse_Tunneling_Libssh2/LICENSE",
+      "destination": "reverse-tunnel/LICENSE",
+      "upstream_sha256": "0038dfdc61cdd588f76b80e40cb4dd29d73917769377a83b04e76ab17e1bfa99",
+      "copied_sha256": "0038dfdc61cdd588f76b80e40cb4dd29d73917769377a83b04e76ab17e1bfa99"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/agent.c",
+      "destination": "libssh2/src/agent.c",
+      "upstream_sha256": "90e7fa38a24ec8ec527e2c791aad13e6e916b47d1541c91707ff81de577ecf7a",
+      "copied_sha256": "1e06dfef5f55128b9641af58f80e54fb907e813efb6980f0dc767891ed6b8ba4"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/bcrypt_pbkdf.c",
+      "destination": "libssh2/src/bcrypt_pbkdf.c",
+      "upstream_sha256": "b0f69007422f018a0f7363280a5c09fa76b3b20706fb3514ac1dd60e5922ade6",
+      "copied_sha256": "8df5f079c77ae9e5b452a575e2ecf33bf4478b356d2975c9a55eef364c84a415"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/channel.c",
+      "destination": "libssh2/src/channel.c",
+      "upstream_sha256": "45adbabb9179e5fd02d4bbd3094ea986ff39fdd89bd90ca4d031601f4f178b62",
+      "copied_sha256": "9dd6bbcb43dd09d1d79f89ae77d0402fe5943c09c04b05cb583a6a038d4d8e0d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/comp.c",
+      "destination": "libssh2/src/comp.c",
+      "upstream_sha256": "694576849b2564a84183ba37e06f6e0d5cd1e19a14f97f5c8bf70c2a7645e35d",
+      "copied_sha256": "77f32223cc4077c7529f0754bb7c6d2b04f541f8b47092a132b799eaca2d4d02"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/chacha.c",
+      "destination": "libssh2/src/chacha.c",
+      "upstream_sha256": "9213c12ec9ff5e9ea177cd84f688470ee626a09c6e6b5a141d57ac5632be9958",
+      "copied_sha256": "0a1efb5884580f0b279fcd8782e455f8e3ca07bbdfebc457706f6e8bf18f296c"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/cipher-chachapoly.c",
+      "destination": "libssh2/src/cipher-chachapoly.c",
+      "upstream_sha256": "0c74ffdb37eb4ff395e14f3f9bf3a77af8b5ff6fc988a015e0f236f7275bc60d",
+      "copied_sha256": "d9f806b81541de62184e3190b7e1c4f7ab576fd290e3558fe25bf0e00f115f5d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/crypt.c",
+      "destination": "libssh2/src/crypt.c",
+      "upstream_sha256": "4526c181dc55d2a90a8212ef49d61e02b265c4227363214a5732c8a6989b6f2f",
+      "copied_sha256": "2d69312c6059192560bb72e4bfa967e4b6e7c4453383580da90ab86233e98aa4"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/global.c",
+      "destination": "libssh2/src/global.c",
+      "upstream_sha256": "42d24a709d679b22f672d2ca36ccce970bd4fe4cccebb275e6ea5d1b8da9d74e",
+      "copied_sha256": "a6c325a335875d6d0fa0dbe544334a469cec32b45879b9372a49419da13bb492"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/hostkey.c",
+      "destination": "libssh2/src/hostkey.c",
+      "upstream_sha256": "38a071ff72120a2272fad9de9fcc67e93fe5d2e285e402d7cc50b0aa1f7a38e1",
+      "copied_sha256": "cab5fef8260ad7c85c52cd91f73825a5ce4e7ef03ba383e39b2e9899b836b774"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/keepalive.c",
+      "destination": "libssh2/src/keepalive.c",
+      "upstream_sha256": "30105b52431e464a6e8a3a2c995a6f1b458d20bc07426b7473f93a41010dbac2",
+      "copied_sha256": "93c0427472296781c0e01275e60b1d74c0f678112c45eebd5e233b31f4e4bbca"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/kex.c",
+      "destination": "libssh2/src/kex.c",
+      "upstream_sha256": "ee5a164beb8bb316c6b79faa0d8fbeb0f2cc552acabeb001867eb9a3b9343c1f",
+      "copied_sha256": "8aab44980cde557fbc55e6e217d1b393f00709625b6e98d022fb51fb7b57dde1"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/knownhost.c",
+      "destination": "libssh2/src/knownhost.c",
+      "upstream_sha256": "d69b80a89c41fcec6898964a9523c87d193cdd37599207c37eed9bfe47b13728",
+      "copied_sha256": "d8728775d4c5930aaa2ecb1aebb7e27d1da2bbf0db70671fd038e843c73eb139"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/mac.c",
+      "destination": "libssh2/src/mac.c",
+      "upstream_sha256": "ab27c0e6d746b2b4586f930a0bfe1b8b81bed84a3af6cb5fff18b0cf3ae6dffb",
+      "copied_sha256": "b21e1b85582e43c9696c74fce826c664003326522d1bafb7a9ba6b28a0a6f64d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/misc.c",
+      "destination": "libssh2/src/misc.c",
+      "upstream_sha256": "2b3f64b577aa911ca04a1198f3effc60f17db34239f45b4b0877ffad79ed6f0a",
+      "copied_sha256": "a62ef040fa38774be9405618a45e4ee95e74bc1b6786ab4b5c207d7f82736cde"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/packet.c",
+      "destination": "libssh2/src/packet.c",
+      "upstream_sha256": "6d598ca4c465254a63eacf86120603e8cd206b36e1345bbceaf21977b4402066",
+      "copied_sha256": "6f826cde9703b1595d17e9e1e78cdbb49815bf0e2d6495a69d7cb27d3acf95ce"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/pem.c",
+      "destination": "libssh2/src/pem.c",
+      "upstream_sha256": "7ee0708fd2cc1c9c057812fd1bbe3f4f9d97b3ed2b07557cc8860f677f6e16c7",
+      "copied_sha256": "b37bcf1a938aa49cd3cab2a60112f0b145c4ad15fa45719890755cd23cbb7c85"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/poly1305.c",
+      "destination": "libssh2/src/poly1305.c",
+      "upstream_sha256": "bde88e4d29166916c1552f7c4852e31c10b6b7bc3fb5e3994dce921e84004954",
+      "copied_sha256": "cc0597e7de057ab22ab988bb98d4418d716ea26bb2ad418879007dd38dce2ebf"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/publickey.c",
+      "destination": "libssh2/src/publickey.c",
+      "upstream_sha256": "f93263c2866110356fafd2e2e89171c94c5a5891427a5699b8ca2587bbac9644",
+      "copied_sha256": "59493cdfa34f44e1025482ead4fd772deac5b5a8c4c24e10d6270c28fbc8e953"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/scp.c",
+      "destination": "libssh2/src/scp.c",
+      "upstream_sha256": "46278e52a8e87bfef09d4ff829b4289ae3d6cd71b9d8fa114e600f318b6a1ffb",
+      "copied_sha256": "1968858d05d93401c7a61d87fcc7ea42d93f13e6b88b6d2d2376f34b194eefb5"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/session.c",
+      "destination": "libssh2/src/session.c",
+      "upstream_sha256": "273a2e6867335c77c3f25a2be94c8c30d34e2809fa1cfbbca4f7a72bbe99a9f9",
+      "copied_sha256": "baf22811cd7970eb140fc442f3c4395e8837c8e096e331fb0cb48305d41a7fb0"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/sftp.c",
+      "destination": "libssh2/src/sftp.c",
+      "upstream_sha256": "eb7fe25d9b259ce02455d6b24b6561ccae5a77b821ce42a95799ddb4be28d419",
+      "copied_sha256": "9a279cb93a85bd0d1c0571bf096cf4950ca28b372d8ba4b7df822ceeac949467"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/transport.c",
+      "destination": "libssh2/src/transport.c",
+      "upstream_sha256": "9ccd1794a066d46eb24adf489a9f4b7cfb755d6b7284b48d109573d7f7136914",
+      "copied_sha256": "4d9ea9cd353e281c4fb8c142777d6e768002db6cdcc7b08b14de8f49c6c6ab51"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/userauth.c",
+      "destination": "libssh2/src/userauth.c",
+      "upstream_sha256": "4b4cf0ac12a2a90543b1930b6c4694465c92d825a8af23ecf68a136ca59bb7cf",
+      "copied_sha256": "4961a3224811e94611b887a3ed16733e289efdf607eff08bb23c859806fa89c7"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/userauth_kbd_packet.c",
+      "destination": "libssh2/src/userauth_kbd_packet.c",
+      "upstream_sha256": "4b3912be93473cf3adeae09ae1d28c861aacfbe1929dfae4053d5b06deda2fe7",
+      "copied_sha256": "e58477ff04c25b7a7f3c0654e36cbc483eef6a4ccc2d66b88223678d757502d2"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/version.c",
+      "destination": "libssh2/src/version.c",
+      "upstream_sha256": "1efcc7dc0d9723660be7bd1d4ddd656b2cd20456d5870e3f1c2521d9428208d0",
+      "copied_sha256": "2710abb5561557c62613f1780fb593d9bc423105bdee81d0ace9bc1ab3b5fb23"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/blowfish.c",
+      "destination": "libssh2/src/blowfish.c",
+      "upstream_sha256": "fb69e73eb5c1d30c5a011d7406850c4b07abc93f04f7175fa0294f820c4de4d8",
+      "copied_sha256": "baeedac57701200ce12ab4beef6ff56dd6bfb787eaa9d9c1f4fe16fbdf690a32"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/mbedtls.c",
+      "destination": "libssh2/src/mbedtls.c",
+      "upstream_sha256": "bf1cdc21b57b74a4740f3aec21ebb3732c3ba77bac18c1e3a34e20a23ff1a679",
+      "copied_sha256": "d051d6224e63f98230112bdfebd7e88eb8bc4c805d54863878f1140f323d7349"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/chacha.h",
+      "destination": "libssh2/src/chacha.h",
+      "upstream_sha256": "35211d14179e1a06824c403aa6b86b21c3ba2b3c49dde7a46ed7a8a6f0187bbd",
+      "copied_sha256": "b42346b01acd60d6502e689802059648205c118035ede40bec8e0d60cf238518"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/channel.h",
+      "destination": "libssh2/src/channel.h",
+      "upstream_sha256": "f525b48ddd3a10e1d8189f00acd97a6d770fc82a070c95ea68ab5ddf9734a499",
+      "copied_sha256": "0ed48da58c98ab7afcbb9a86177a29c92bb66dbd8793e1a8e477da0ef2f66e6d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/cipher-chachapoly.h",
+      "destination": "libssh2/src/cipher-chachapoly.h",
+      "upstream_sha256": "3879879652fc9038970550754674f3c5a9780d9f8cf52022526941ca97f170a9",
+      "copied_sha256": "f6a69fb48994da6bf7f286884ed473ee0546027bba3af433b38b95d1b4442f5f"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/comp.h",
+      "destination": "libssh2/src/comp.h",
+      "upstream_sha256": "0ceb43dea417509ab425e4b6c336651d7b7888f2ee2736297d68e161289f5169",
+      "copied_sha256": "95aa07dee4c6f2c33f6bc762c6532997e37303bf1be1bb1276f4ecd5e7092443"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/crypto.h",
+      "destination": "libssh2/src/crypto.h",
+      "upstream_sha256": "428847160da875f0130d807db2bc52533b44eca34068bdd58f0f31519b6dd1d2",
+      "copied_sha256": "3d012f1d09ddda79b639525782bbb74b94bd365a053591d7daf1127951744055"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/crypto_config.h",
+      "destination": "libssh2/src/crypto_config.h",
+      "upstream_sha256": "a83b23c98e68dd5cd3c73e1b33c71daba4224d2af5ce38aeb216315f015d1a3f",
+      "copied_sha256": "681f63ff1aa8a25af6aed954f32bbbf405ccf64d8541f26aeac68cb938b2e388"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/libgcrypt.h",
+      "destination": "libssh2/src/libgcrypt.h",
+      "upstream_sha256": "80c1194b0e7422f7b0fdaec809d76cef5a7c7a21c9282c02692a749defccde19",
+      "copied_sha256": "3fdf2ae7a85a6de14e3264a9b35ccc188554d3972d725621411243a3ba7736a3"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/libssh2_priv.h",
+      "destination": "libssh2/src/libssh2_priv.h",
+      "upstream_sha256": "3e0b5712a3ff89edcb514ca7e2f595e22f32aad4ff050789ad68137969c5dca0",
+      "copied_sha256": "cf3a73014f4cdbead00837fa6cd6a699439926105d9d3f03fd6852343503a95d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/libssh2_setup.h",
+      "destination": "libssh2/src/libssh2_setup.h",
+      "upstream_sha256": "530164e968bbb155b16060eb8252c6c45ab7b796cc51c0f5bb5d789b72315269",
+      "copied_sha256": "d5d1c31758f49ef67e6afac92a7c8fc0ccb53b1fd2bba550e57a3042c17ba55b"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/mac.h",
+      "destination": "libssh2/src/mac.h",
+      "upstream_sha256": "a900b8ca0d940a3ecd2be483a74fe59a625c8fad141c316745108f1e7f1d16f3",
+      "copied_sha256": "acdc44807370d226c64958e870f3daec767378b45246bbcdee37db87120dab61"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/mbedtls.h",
+      "destination": "libssh2/src/mbedtls.h",
+      "upstream_sha256": "ddd0bb4aac12ac2cb6f2db20d1ae04e51825c9c31ca3b3815389712e058292f1",
+      "copied_sha256": "5cf5bf54bf94f8b2474abcff870f0f0f3c6bb0292c08cf9535e9fd71efb5e4b5"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/misc.h",
+      "destination": "libssh2/src/misc.h",
+      "upstream_sha256": "648f016cc7b4868ab8e80b6543c04498cfcce02ce91a0ca38931b0328d53a7d3",
+      "copied_sha256": "1b219013aa83416950db24c1d825fee173570eb4425d23726ffd7d7c738c3b1e"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/openssl.h",
+      "destination": "libssh2/src/openssl.h",
+      "upstream_sha256": "da3b651c6fc69131cbd803c4f6202541ec5a25e74685f574c3490ddeff54a3ab",
+      "copied_sha256": "790ff7ff84dccfd15540cab4a053af518cf5f4f98b6fcf2fe2385bb6ad1cf376"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/os400qc3.h",
+      "destination": "libssh2/src/os400qc3.h",
+      "upstream_sha256": "4138ed6a564a0a63612280147057e59438c84649d817b587b29d2f40b44e4bb2",
+      "copied_sha256": "c1f8a950a42a8a05ca00ac142915d9fd5bd99ef0c9a3545a12823c03ccb8673d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/packet.h",
+      "destination": "libssh2/src/packet.h",
+      "upstream_sha256": "cda769262956b149b127be4eeb4fd7a33633c415dad753ec4be808a67f3e2dc7",
+      "copied_sha256": "66ded0eea0be5b4c1f5217e053941a848e5106311eb9338dd39f1bc48713a4c4"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/poly1305.h",
+      "destination": "libssh2/src/poly1305.h",
+      "upstream_sha256": "0aa0943445569d72bccaf70cd47e6ee24fca5ce9c886409b16e60ae78a130143",
+      "copied_sha256": "58a34be15d390cae4cb5a215ccf139f0ca359cdb47ea846e6e7e1e6141d3409e"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/session.h",
+      "destination": "libssh2/src/session.h",
+      "upstream_sha256": "79b370fe33e79d90a7b74c86b9af7d2e38b5fcca081c345e7d96e87f15aa822d",
+      "copied_sha256": "425dc8e907d8d9443b1a7dbb02310321c2f804cf617a8e7ba4f5c454bd75bc58"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/sftp.h",
+      "destination": "libssh2/src/sftp.h",
+      "upstream_sha256": "0c0207d39b0000138c3d980e3d96a877a1a2d75a5cc29f7545346474f4096f43",
+      "copied_sha256": "9c53d613cfdb14d4244ab0643918de60363d9a360a40413cd2e4d682f3e32125"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/transport.h",
+      "destination": "libssh2/src/transport.h",
+      "upstream_sha256": "0e3ccc9de3fa80b42b7dfa88431783ce53519f88680ba281e2136b59dedc099f",
+      "copied_sha256": "f2a55152b28ab3290d426767d9e33b053312300b0b4105cc0d20814c1b133ff3"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/userauth.h",
+      "destination": "libssh2/src/userauth.h",
+      "upstream_sha256": "6c3151a71462e5b857e45034055bb81b6c0d4a0e120cf940254adc80444f9874",
+      "copied_sha256": "23eb97c342ab6bc51606fe917828e8c01cd4bda4c956d5f22b66d86b6db0d1a3"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/userauth_kbd_packet.h",
+      "destination": "libssh2/src/userauth_kbd_packet.h",
+      "upstream_sha256": "5c688ff7b40b1db21d696b3ceaa242a8e46aef932f15d5a12af8e911aee1ce9d",
+      "copied_sha256": "570d9cbca0e3969d1f7dac2e3d89b0ad3b79bd9f0993d60b830a3b30113ae9f3"
+    },
+    {
+      "source": "libssh2_esp/libssh2/src/wincng.h",
+      "destination": "libssh2/src/wincng.h",
+      "upstream_sha256": "72a91063a9c2ee6c88bc3ea6fe657ebdf6e5ec82f2d5e9250e737412fb85520f",
+      "copied_sha256": "78deb417e2cb9e514ad9da35db2f918d2649034318959b2b7a0fa15a9e5f960a"
+    },
+    {
+      "source": "libssh2_esp/libssh2/include/libssh2.h",
+      "destination": "libssh2/src/libssh2.h",
+      "upstream_sha256": "0835ac4312c943b41783bfffb9c09125a8a462c3cf3a732961ff8e8b4d20c2f5",
+      "copied_sha256": "6b4c5310a4d40c93778c19e96d933f1282058bd981d34e3d9ba69a1c0747a1df"
+    },
+    {
+      "source": "libssh2_esp/libssh2/include/libssh2_publickey.h",
+      "destination": "libssh2/src/libssh2_publickey.h",
+      "upstream_sha256": "6b50f5f5643be0b0879863ebd028ce29ffe802d5b726f9872a8005141d009719",
+      "copied_sha256": "f1cd086f3950e65635827ee3332c1c6ca62887c0f84369ec58e31974debb36e9"
+    },
+    {
+      "source": "libssh2_esp/libssh2/include/libssh2_sftp.h",
+      "destination": "libssh2/src/libssh2_sftp.h",
+      "upstream_sha256": "98ca9040099033c6e683a1e77c3facfd2bcad6781b9af189fabaf03acb994519",
+      "copied_sha256": "89e5a45bf6dd5e15f5c477f4377581108ed0d6d2921d57551aba1bbf1d257acb"
+    },
+    {
+      "source": "libssh2_esp/libssh2_config.h",
+      "destination": "libssh2/src/libssh2_config.h",
+      "upstream_sha256": "40cbc326f1eaeb6c85bd1b4ceac443deb8309911e943690e707bb6b90479b0d8",
+      "copied_sha256": "7a04123e03ded5949085085138e44808fc5425b65712e16ec6aa88f9fa7235d6"
+    },
+    {
+      "source": "libssh2_esp/compat.h",
+      "destination": "libssh2/src/compat.h",
+      "upstream_sha256": "1b489554f27e4b1b72d1af3c66bb342b446607ecd2650c685c639f9725c31866",
+      "copied_sha256": "aca481aa3200b32aaed9e2f5be0bceb914b69f8c96deef2475ac35ce17353c68"
+    },
+    {
+      "source": "libssh2_esp/LICENSE",
+      "destination": "libssh2/LICENSE-port",
+      "upstream_sha256": "5b24009594abb7d31921aeee2e22c9b4babf6ffb1a5ae2dde40381bbd8f708c5",
+      "copied_sha256": "0d0029f0fbe3db3ee851fb5801470892617fd8bb65b8694bf70ed537e7f4fd4d"
+    },
+    {
+      "source": "libssh2_esp/libssh2/COPYING",
+      "destination": "libssh2/COPYING",
+      "upstream_sha256": "b773bd396eba8a8c3f0ed2c9254523257fce7272e16c6b70b18cb3aee45b9d01",
+      "copied_sha256": "f7f9633cf9ff2f1333f3d7ce46973a8716a4d2a2815ad56f30d437d5fea7bafe"
+    }
+  ]
+}
