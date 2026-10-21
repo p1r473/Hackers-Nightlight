@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-21",
+  "scope": "existing_desktop_openssh_reference",
+  "ssh_client": "OpenSSH_for_Windows_9.5p2, LibreSSL 3.8.2",
+  "bulb_ssh_session_tested": false,
+  "esp32_libssh2_tested": false,
+  "hardware_tested": false,
+  "service_configuration_changed": false,
+  "credentials_created_or_copied": false,
+  "tests": [
+    {
+      "name": "unknown_host_identity_rejected",
+      "passed": true
+    },
+    {
+      "name": "no_authentication_method_rejected",
+      "passed": true
+    }
+  ],
+  "sessions": [
+    {
+      "number": 1,
+      "listener_addresses": [
+        "127.0.0.1"
+      ],
+      "authenticated_with_existing_key": true,
+      "transfers": [
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 1048576,
+          "bytes_received": 1048576,
+          "chunk": 257,
+          "sha256": "10af19e52dce99edfe977c2ee72fb396dccac9147fd834e1cd289d79fa0605e9",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        },
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 1048576,
+          "bytes_received": 1048576,
+          "chunk": 4096,
+          "sha256": "10af19e52dce99edfe977c2ee72fb396dccac9147fd834e1cd289d79fa0605e9",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        },
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 1048576,
+          "bytes_received": 1048576,
+          "chunk": 1024,
+          "sha256": "10af19e52dce99edfe977c2ee72fb396dccac9147fd834e1cd289d79fa0605e9",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0.02,
+          "ssh_or_device_identity_verified": false
+        },
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 0,
+          "bytes_received": 0,
+          "chunk": 1,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        }
+      ],
+      "kex": "curve25519-sha256",
+      "host_key": "ssh-ed25519",
+      "cipher": "chacha20-poly1305@openssh.com",
+      "client_process_stopped": true,
+      "exact_listener_removed_and_connect_refused": true,
+      "echo_still_works_directly_after_tunnel_stop": true
+    },
+    {
+      "number": 2,
+      "listener_addresses": [
+        "127.0.0.1"
+      ],
+      "authenticated_with_existing_key": true,
+      "transfers": [
+        {
+          "scope": "specified_tcp_echo_endpoint",
+          "bytes_sent": 65536,
+          "bytes_received": 65536,
+          "chunk": 17,
+          "sha256": "ac8be2a39ab46f34c4b4d062ac62b4901a01943edb466e9f5ca12fa34dfa68e4",
+          "write_half_closed": true,
+          "read_eof": true,
+          "read_delay_seconds": 0,
+          "ssh_or_device_identity_verified": false
+        }
+      ],
+      "kex": "curve25519-sha256",
+      "host_key": "ssh-ed25519",
+      "cipher": "chacha20-poly1305@openssh.com",
+      "client_process_stopped": true,
+      "exact_listener_removed_and_connect_refused": true,
+      "echo_still_works_directly_after_tunnel_stop": true
+    }
+  ],
+  "echo_process_stopped": true,
+  "echo_listener_removed": true,
+  "ssh_configuration_keys_and_known_hosts_unchanged": true,
+  "passed": true,
+  "limitations": [
+    "Same-host OpenSSH reference only; does not execute the ESP32 firmware or its libssh2 transport.",
+    "Existing desktop client key is Ed25519, not the bulb-required P256 client key.",
+    "Current server offers ECDSA nistp384, RSA and Ed25519 host keys, not bulb-required nistp256.",
+    "Observed desktop throughput is not a bulb performance measurement.",
+    "No dedicated bulb account, device key, host-key enrollment, firewall or service deployment occurred."
+  ],
+  "total_echo_payload_bytes": 3211264,
+  "same_host_only": true,
+  "public_performance_claim": false,
+  "p256_host_key_probe": {
+    "passed": false,
+    "failure_stage": "host key algorithm negotiation",
+    "server_offered": [
+      "rsa-sha2-512",
+      "rsa-sha2-256",
+      "ecdsa-sha2-nistp384",
+      "ssh-ed25519"
+    ],
+    "required_by_bulb": "ecdsa-sha2-nistp256",
+    "server_changed": false
+  },
+  "method": [
+    "Normal Windows account, existing OpenSSH config, key and strict known-host verification.",
+    "Unknown host-key identity and disabled authentication methods rejected separately.",
+    "Temporary finite loopback echo service and SSH remote forward with server-assigned port.",
+    "Inspect exact listener address and owning process; match echo PID to listener PID.",
+    "Check binary equality, SHA256, write half-close and receive EOF through the SSH listener.",
+    "Stop only the created SSH child, verify exact port absent and connection refused, then check echo directly.",
+    "Repeat with a new SSH session, stop echo, verify cleanup and unchanged SSH files."
+  ],
+  "sources_sha256_lf": {
+    "tools/lab_echo.py": "618aec1ba8b7e3c058c06720a94293cd711d3069dc8300193b34ffc79a0e320b",
+    "tools/remote_tcp_check.py": "07f8bfa8c806b78532380fd37be9c3399c199e43b2f58a58308f36cd20cd1e8e",
+    "tools/vendor/ssh_pattern.py": "763cbbbf11720e54d091254de08625d2cf9835d44d1ae2781f975eafbe7f6662"
+  },
+  "local_harness_sha256_lf": "b76d79ac1bce86c8625394efdc2dae921c4724a18d50ebfb79c845068ead4497",
+  "local_review": {
+    "host": "FlyingDutchman",
+    "model": "qwen38-fast-27b-opt:latest",
+    "independent_checks": [
+      "Normal account and USERPROFILE verified before SSH; existing login worked.",
+      "Actual child PID matched echo listener; exact ports and owned child termination checked.",
+      "Windows venv redirector replaced with base interpreter for accurate process ownership.",
+      "OpenSSH diagnostics collected from owned stderr pipe because Windows -E log is exclusive."
+    ]
+  }
+}

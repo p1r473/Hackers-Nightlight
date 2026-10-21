@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-21",
+  "target": "lightjack_wyze_ssh_poc",
+  "hardware_tested": false,
+  "ssh_session_tested": false,
+  "relay_deployed": false,
+  "credentials_provisioned": false,
+  "image": {
+    "size_bytes": 1006432,
+    "sha256": "951e1931f697898468801036ca9efa80c860b01e487b758b138a4113cf399a47",
+    "slot_size_bytes": 1966080,
+    "chip": "ESP32-C3",
+    "checksum_and_validation_hash": "valid"
+  },
+  "linked_flash_bytes": 978570,
+  "static_ram_bytes": 40324,
+  "platformio_core": "6.1.18",
+  "platform": "6.12.0",
+  "arduino": "2.0.17",
+  "idf": "4.4.7",
+  "tests": {
+    "upstream_native_helper_cases": 56,
+    "configuration_policy_checks": 147,
+    "private_provisioning_unittest_methods": 19,
+    "private_provisioning_evidence": "remote-provision-results.json",
+    "configured_then_unset_fixture_builds": "passed; no cleaning between builds",
+    "actual_adapter_with_mock_boundaries_checks": 26,
+    "base_lightjack_target_rebuild": "passed",
+    "startup_wrapper_call_verified_in_final_elf": true,
+    "ssh_connect_and_ecdh_code_present_in_final_elf": true,
+    "tcp_tool_loopback_unittest_methods": 21,
+    "tcp_tool_evidence": "remote-tcp-results.json",
+    "desktop_openssh_reference_sessions": 2,
+    "desktop_openssh_reference_evidence": "openssh-reference-results.json",
+    "desktop_p256_sessions": 2,
+    "desktop_p256_rejection_checks": 7,
+    "desktop_p256_relay_evidence": "p256-relay-results.json"
+  },
+  "test_compilers": {
+    "native_policy": "TinyCC 0.9.27",
+    "native_cpp": "Zig 0.17.0"
+  },
+  "review": {
+    "host": "FlyingDutchman",
+    "model": "qwen38-fast-27b-opt:latest",
+    "resolved": [
+      "Actual upstream loop does not initiate from DISCONNECTED. Added explicit connect and tested it.",
+      "Removed dropped-byte metric because upstream accessor always returns zero.",
+      "Local reviewer retry-hammer claim rejected: upstream connect failure sets ERROR, whose loop uses reconnect backoff.",
+      "Initialization allocation failure stays disabled until reboot; documented as a current boundary.",
+      "Earlier duplicate-mbedTLS claim rejected: vendored file inventory contains no second mbedTLS implementation; the framework supplies it.",
+      "ECDH p256 backend presence independently verified in source and final ELF."
+    ]
+  },
+  "limitations": [
+    "Default provider is unprovisioned; no real connection was attempted. Private provisioning tooling and invalid-key build selection are verified, not operational authentication.",
+    "Firmware host tests do not exercise SSH transport, radio, heap peaks or physical hardware. Separate TCP tool fixtures exercise actual loopback sockets only.",
+    "Full transfer integrity, half-close, reconnect timing, performance and memory behavior remain unverified.",
+    "Inherited HTTP management remains unauthenticated and shares the upstream AP password.",
+    "All generated images are excluded from the source package."
+  ],
+  "ssh_session_scope": "ESP32 firmware and libssh2; remains untested",
+  "desktop_openssh_reference_tested": true,
+  "desktop_p256_relay_tested": true,
+  "credential_scope": "Bulb firmware; dedicated desktop test credentials are separate"
+}

@@ -1,0 +1,1089 @@
+#include "ssh_transport.h"
+#include "channel_inactivity.h"
+#include "memory_fixes.h"
+#include <ctype.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/socket.h>
+
+#ifdef TUNNEL_INSTRUMENT
+#include <esp_timer.h>
+#include <stdio.h>
+#endif
+
+// ---------------------------------------------------------------------------
+// TransportPump
+// ---------------------------------------------------------------------------
+
+#ifdef TUNNEL_DIAG_LOG_ONLY
+namespace {
+static constexpr unsigned long HTTPDIAG_NO_REQUEST_AFTER_MS = 2000;
+static constexpr unsigned long HTTPDIAG_STAGE_STALL_AFTER_MS = 2000;
+
+const char *httpDiagValue(const char *value) {
+  return value && value[0] ? value : "-";
+}
+
+bool ciEquals(const char *a, const char *b, size_t len) {
+  for (size_t i = 0; i < len; ++i) {
+    if (tolower(static_cast<unsigned char>(a[i])) !=
+        tolower(static_cast<unsigned char>(b[i]))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const char *findHeaderValue(const char *headers, size_t len,
+                            const char *headerName) {
+  const size_t nameLen = strlen(headerName);
+  const char *cursor = headers;
+  const char *end = headers + len;
+  while (cursor < end) {
+    const char *lineEnd =
+        static_cast<const char *>(memchr(cursor, '\n', end - cursor));
+    if (!lineEnd) {
+      lineEnd = end;
+    }
+    const char *lineLimit = lineEnd;
+    if (lineLimit > cursor && lineLimit[-1] == '\r') {
+      --lineLimit;
+    }
+    if (static_cast<size_t>(lineLimit - cursor) > nameLen &&
+        cursor[nameLen] == ':' && ciEquals(cursor, headerName, nameLen)) {
+      const char *value = cursor + nameLen + 1;
+      while (value < lineLimit && (*value == ' ' || *value == '\t')) {
+        ++value;
+      }
+      return value;
+    }
+    cursor = lineEnd < end ? lineEnd + 1 : end;
+  }
+  return nullptr;
+}
+
+void copyToken(char *dst, size_t dstSize, const char *begin, const char *end) {
+  if (dstSize == 0) {
+    return;
+  }
+  if (!begin || !end || end <= begin) {
+    dst[0] = '\0';
+    return;
+  }
+  size_t len = static_cast<size_t>(end - begin);
+  if (len >= dstSize) {
+    len = dstSize - 1;
+  }
+  memcpy(dst, begin, len);
+  dst[len] = '\0';
+}
+
+void parseRequestBuffer(int slot, ChannelSlot &ch) {
+  if (ch.diagRequestParsed || ch.diagRequestBufferLen == 0) {
+    return;
+  }
+  const char *buffer = ch.diagRequestBuffer;
+  const size_t len = ch.diagRequestBufferLen;
+  const char *headersEnd = nullptr;
+  for (size_t i = 0; i + 3 < len; ++i) {
+    if (buffer[i] == '\r' && buffer[i + 1] == '\n' && buffer[i + 2] == '\r' &&
+        buffer[i + 3] == '\n') {
+      headersEnd = buffer + i + 4;
+      break;
+    }
+  }
+  const char *lineEnd = static_cast<const char *>(memchr(buffer, '\n', len));
+  if (!lineEnd) {
+    if (len == sizeof(ch.diagRequestBuffer) - 1) {
+      LOGF_W("SSH", "HTTPDIAG ch=%d ssh_to_local request_parse_truncated",
+             slot);
+      ch.diagRequestParsed = true;
+    }
+    return;
+  }
+  if (!headersEnd) {
+    if (len == sizeof(ch.diagRequestBuffer) - 1) {
+      LOGF_W("SSH", "HTTPDIAG ch=%d ssh_to_local headers_parse_truncated",
+             slot);
+      ch.diagRequestParsed = true;
+    }
+    return;
+  }
+  const char *lineLimit = lineEnd;
+  if (lineLimit > buffer && lineLimit[-1] == '\r') {
+    --lineLimit;
+  }
+  const char *methodEnd =
+      static_cast<const char *>(memchr(buffer, ' ', lineLimit - buffer));
+  if (!methodEnd) {
+    return;
+  }
+  const char *urlStart = methodEnd + 1;
+  const char *urlEnd =
+      static_cast<const char *>(memchr(urlStart, ' ', lineLimit - urlStart));
+  if (!urlEnd) {
+    return;
+  }
+
+  copyToken(ch.diagMethod, sizeof(ch.diagMethod), buffer, methodEnd);
+  copyToken(ch.diagUrl, sizeof(ch.diagUrl), urlStart, urlEnd);
+
+  const char *rid = findHeaderValue(
+      buffer, static_cast<size_t>(headersEnd - buffer), "X-Request-ID");
+  if (rid) {
+    const char *ridEnd = rid;
+    while (ridEnd < headersEnd && *ridEnd != '\r' && *ridEnd != '\n') {
+      ++ridEnd;
+    }
+    copyToken(ch.diagRequestId, sizeof(ch.diagRequestId), rid, ridEnd);
+  }
+
+  ch.diagRequestParsed = true;
+  ch.diagRequestMs = millis();
+  LOGF_I("SSH", "HTTPDIAG ch=%d ssh_to_local request rid=%s method=%s url=%s",
+         slot, httpDiagValue(ch.diagRequestId), httpDiagValue(ch.diagMethod),
+         httpDiagValue(ch.diagUrl));
+}
+
+void observeSshToLocal(int slot, ChannelSlot &ch, const uint8_t *data,
+                       size_t len) {
+  if (ch.diagRequestParsed || len == 0) {
+    return;
+  }
+  const size_t cap = sizeof(ch.diagRequestBuffer) - 1;
+  const size_t room =
+      cap > ch.diagRequestBufferLen ? cap - ch.diagRequestBufferLen : 0;
+  const size_t toCopy = len < room ? len : room;
+  if (toCopy > 0) {
+    memcpy(ch.diagRequestBuffer + ch.diagRequestBufferLen, data, toCopy);
+    ch.diagRequestBufferLen += toCopy;
+    ch.diagRequestBuffer[ch.diagRequestBufferLen] = '\0';
+  }
+  parseRequestBuffer(slot, ch);
+}
+
+void logLocalWriteOnce(int slot, ChannelSlot &ch, ssize_t sent,
+                       size_t remaining) {
+  if (ch.diagLocalWriteLogged || sent <= 0) {
+    return;
+  }
+  ch.diagLocalWriteLogged = true;
+  ch.diagLocalWriteMs = millis();
+  LOGF_I("SSH",
+         "HTTPDIAG ch=%d local_write rid=%s method=%s url=%s sent=%ld "
+         "remaining=%zu",
+         slot, httpDiagValue(ch.diagRequestId), httpDiagValue(ch.diagMethod),
+         httpDiagValue(ch.diagUrl), static_cast<long>(sent), remaining);
+}
+
+void logLocalResponseOnce(int slot, ChannelSlot &ch, const uint8_t *data,
+                          size_t len) {
+  if (ch.diagResponseLogged || len == 0) {
+    return;
+  }
+  ch.diagResponseLogged = true;
+  int status = 0;
+  if (len >= 12 && memcmp(data, "HTTP/", 5) == 0) {
+    const char *line = reinterpret_cast<const char *>(data);
+    const char *space = static_cast<const char *>(memchr(line, ' ', len));
+    if (space && static_cast<size_t>((space + 4) - line) <= len &&
+        isdigit(static_cast<unsigned char>(space[1])) &&
+        isdigit(static_cast<unsigned char>(space[2])) &&
+        isdigit(static_cast<unsigned char>(space[3]))) {
+      status =
+          (space[1] - '0') * 100 + (space[2] - '0') * 10 + (space[3] - '0');
+    }
+  }
+  LOGF_I("SSH",
+         "HTTPDIAG ch=%d local_to_ssh response rid=%s method=%s url=%s "
+         "status=%d bytes=%zu",
+         slot, httpDiagValue(ch.diagRequestId), httpDiagValue(ch.diagMethod),
+         httpDiagValue(ch.diagUrl), status, len);
+}
+
+void logChannelsWithoutRequest(ChannelManager *channels) {
+  if (!channels) {
+    return;
+  }
+  const unsigned long now = millis();
+  const int maxSlots = channels->getMaxSlots();
+  for (int i = 0; i < maxSlots; ++i) {
+    ChannelSlot &ch = channels->getSlot(i);
+    if (!ch.active || ch.diagRequestParsed || ch.diagNoRequestLogged ||
+        ch.diagBoundMs == 0) {
+      continue;
+    }
+    const unsigned long age = now - ch.diagBoundMs;
+    if (age < HTTPDIAG_NO_REQUEST_AFTER_MS) {
+      continue;
+    }
+    ch.diagNoRequestLogged = true;
+    LOGF_W("SSH",
+           "HTTPDIAG ch=%d no_request_after_ms=%lu remote=%s:%d local=%s:%d "
+           "remote_eof=%d local_eof=%d toLocal=%zu toRemote=%zu",
+           i, age, ch.endpoint.remoteHost, ch.endpoint.remotePort,
+           ch.endpoint.localHost, ch.endpoint.localPort, ch.remoteEof ? 1 : 0,
+           ch.localEof ? 1 : 0, ch.toLocal ? ch.toLocal->size() : 0,
+           ch.toRemote ? ch.toRemote->size() : 0);
+  }
+
+  for (int i = 0; i < maxSlots; ++i) {
+    ChannelSlot &ch = channels->getSlot(i);
+    if (!ch.active || !ch.diagRequestParsed || ch.diagLocalWriteLogged ||
+        ch.diagNoLocalWriteLogged || ch.diagRequestMs == 0) {
+      continue;
+    }
+    const unsigned long age = now - ch.diagRequestMs;
+    if (age < HTTPDIAG_STAGE_STALL_AFTER_MS) {
+      continue;
+    }
+    ch.diagNoLocalWriteLogged = true;
+    LOGF_W("SSH",
+           "HTTPDIAG ch=%d no_local_write_after_ms=%lu rid=%s method=%s "
+           "url=%s remote_eof=%d local_eof=%d toLocal=%zu toRemote=%zu",
+           i, age, httpDiagValue(ch.diagRequestId),
+           httpDiagValue(ch.diagMethod), httpDiagValue(ch.diagUrl),
+           ch.remoteEof ? 1 : 0, ch.localEof ? 1 : 0,
+           ch.toLocal ? ch.toLocal->size() : 0,
+           ch.toRemote ? ch.toRemote->size() : 0);
+  }
+
+  for (int i = 0; i < maxSlots; ++i) {
+    ChannelSlot &ch = channels->getSlot(i);
+    if (!ch.active || !ch.diagLocalWriteLogged || ch.diagResponseLogged ||
+        ch.diagNoResponseLogged || ch.diagLocalWriteMs == 0) {
+      continue;
+    }
+    const unsigned long age = now - ch.diagLocalWriteMs;
+    if (age < HTTPDIAG_STAGE_STALL_AFTER_MS) {
+      continue;
+    }
+    ch.diagNoResponseLogged = true;
+    LOGF_W("SSH",
+           "HTTPDIAG ch=%d no_local_response_after_ms=%lu rid=%s method=%s "
+           "url=%s remote_eof=%d local_eof=%d toLocal=%zu toRemote=%zu",
+           i, age, httpDiagValue(ch.diagRequestId),
+           httpDiagValue(ch.diagMethod), httpDiagValue(ch.diagUrl),
+           ch.remoteEof ? 1 : 0, ch.localEof ? 1 : 0,
+           ch.toLocal ? ch.toLocal->size() : 0,
+           ch.toRemote ? ch.toRemote->size() : 0);
+  }
+}
+} // namespace
+#endif
+
+TransportPump::TransportPump() {}
+
+TransportPump::~TransportPump() {
+  SAFE_FREE(rxBuf_);
+  SAFE_FREE(txBuf_);
+}
+
+bool TransportPump::init(size_t bufferSize) {
+  bufSize_ = bufferSize;
+  rxBuf_ = static_cast<uint8_t *>(safeMalloc(bufSize_, "tp_rxBuf"));
+  txBuf_ = static_cast<uint8_t *>(safeMalloc(bufSize_, "tp_txBuf"));
+  if (!rxBuf_ || !txBuf_) {
+    LOG_E("SSH", "TransportPump: failed to allocate buffers");
+    SAFE_FREE(rxBuf_);
+    SAFE_FREE(txBuf_);
+    return false;
+  }
+  LOGF_I("SSH", "TransportPump initialized: %zuB buffers", bufSize_);
+  return true;
+}
+
+void TransportPump::attach(SSHSession *session, ChannelManager *channels) {
+  session_ = session;
+  channels_ = channels;
+}
+
+bool TransportPump::pumpAll() {
+  if (!session_ || !channels_ || !rxBuf_ || !txBuf_) {
+    return false;
+  }
+  lastBytesMoved_ = 0;
+
+  // Phase 1: Read SSH -> toLocal rings (processes WINDOW_ADJUST implicitly)
+  pumpSshTransport();
+
+  // Phase 2: toLocal rings -> local sockets
+  drainSshToLocal();
+
+  // Phase 3: local sockets -> toRemote rings -> SSH
+  drainLocalToSsh();
+
+  // Phase 4: transition Open channels to Draining when both EOFs set,
+  //          then finalize Draining channels whose rings are empty.
+  checkCloses();
+
+#ifdef TUNNEL_DIAG_LOG_ONLY
+  logChannelsWithoutRequest(channels_);
+#endif
+
+  return lastBytesMoved_ > 0;
+}
+
+bool TransportPump::hasAnyBackpressure() const {
+  if (!channels_) {
+    return false;
+  }
+  int max = channels_->getMaxSlots();
+  for (int i = 0; i < max; ++i) {
+    const ChannelSlot &ch = channels_->getSlot(i);
+    if (ch.active && (ch.localReadPaused || ch.sshReadPaused)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+#ifdef TUNNEL_INSTRUMENT
+int TransportPump::instrRead(int slotIdx, LIBSSH2_CHANNEL *ch, char *buf,
+                             size_t sz) {
+  int64_t t0 = esp_timer_get_time();
+  int rc = libssh2_channel_read(ch, buf, sz);
+  int64_t dt = esp_timer_get_time() - t0;
+  if (slotIdx >= 0 && slotIdx < INSTR_MAX_CHANNELS) {
+    InstrChannel &ic = instrCh_[slotIdx];
+    ic.read_us += dt;
+    ic.read_calls++;
+    if (rc == LIBSSH2_ERROR_EAGAIN) {
+      ic.read_eagain++;
+    } else if (rc == 0) {
+      ic.read_zero++;
+    } else if (rc > 0) {
+      ic.read_bytes += rc;
+    }
+  }
+  return rc;
+}
+
+int TransportPump::instrWrite(int slotIdx, LIBSSH2_CHANNEL *ch, const char *buf,
+                              size_t sz) {
+  int64_t t0 = esp_timer_get_time();
+  int rc = libssh2_channel_write(ch, buf, sz);
+  int64_t dt = esp_timer_get_time() - t0;
+  if (slotIdx >= 0 && slotIdx < INSTR_MAX_CHANNELS) {
+    InstrChannel &ic = instrCh_[slotIdx];
+    ic.write_us += dt;
+    ic.write_calls++;
+    if (rc == LIBSSH2_ERROR_EAGAIN) {
+      ic.write_eagain++;
+    } else if (rc > 0) {
+      ic.write_bytes += rc;
+    }
+  }
+  return rc;
+}
+
+size_t TransportPump::formatInstrumentation(char *out, size_t outSize) const {
+  // Single-line format. Session-level + first 3 channels.
+  size_t off = 0;
+  int n = snprintf(
+      out + off, outSize - off,
+      "lock_us=%llu lock_n=%u lock_fail=%u p1_us=%llu p1_n=%u p3_us=%llu "
+      "p3_n=%u",
+      (unsigned long long)instrSess_.lock_wait_us, instrSess_.lock_calls,
+      instrSess_.lock_failed, (unsigned long long)instrSess_.phase1_us,
+      instrSess_.phase1_cycles, (unsigned long long)instrSess_.phase3_us,
+      instrSess_.phase3_cycles);
+  if (n < 0)
+    return off;
+  off += (size_t)n;
+  if (off >= outSize)
+    return outSize - 1;
+  for (int i = 0; i < INSTR_MAX_CHANNELS && off < outSize - 1; ++i) {
+    const InstrChannel &ic = instrCh_[i];
+    if (ic.read_calls == 0 && ic.write_calls == 0)
+      continue; // skip silent slots
+    n = snprintf(
+        out + off, outSize - off,
+        " ch%d_r_us=%llu ch%d_r_n=%u ch%d_r_eag=%u ch%d_r_zero=%u "
+        "ch%d_r_b=%llu ch%d_w_us=%llu ch%d_w_n=%u ch%d_w_eag=%u ch%d_w_b=%llu",
+        i, (unsigned long long)ic.read_us, i, ic.read_calls, i, ic.read_eagain,
+        i, ic.read_zero, i, (unsigned long long)ic.read_bytes, i,
+        (unsigned long long)ic.write_us, i, ic.write_calls, i, ic.write_eagain,
+        i, (unsigned long long)ic.write_bytes);
+    if (n < 0)
+      break;
+    off += (size_t)n;
+  }
+  if (off >= outSize)
+    off = outSize - 1;
+  out[off] = '\0';
+  return off;
+}
+#endif // TUNNEL_INSTRUMENT
+
+int TransportPump::consumeCloseEvents(CloseEvent *out, int maxEvents) {
+  int count = pendingCloseCount_ < maxEvents ? pendingCloseCount_ : maxEvents;
+  for (int i = 0; i < count; ++i) {
+    out[i] = pendingCloseEvents_[i];
+  }
+  pendingCloseCount_ = 0;
+  return count;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 1: Pump SSH transport
+// Read from each SSH channel into toLocal ring. This implicitly triggers
+// libssh2 to process incoming SSH packets including WINDOW_ADJUST.
+// MUST run before any writes to ensure channels have fresh window credit.
+//
+// IMPORTANT: remote EOF does NOT trigger close. It just sets the flag.
+// The channel stays open to let the local side finish sending its response.
+// ---------------------------------------------------------------------------
+void TransportPump::pumpSshTransport() {
+#ifdef TUNNEL_INSTRUMENT
+  int64_t _phase1_t0 = esp_timer_get_time();
+  int64_t _lock_t0 = esp_timer_get_time();
+#endif
+  if (!session_->lock(pdMS_TO_TICKS(50))) {
+#ifdef TUNNEL_INSTRUMENT
+    instrSess_.lock_wait_us += esp_timer_get_time() - _lock_t0;
+    instrSess_.lock_failed++;
+#endif
+    return;
+  }
+#ifdef TUNNEL_INSTRUMENT
+  instrSess_.lock_wait_us += esp_timer_get_time() - _lock_t0;
+  instrSess_.lock_calls++;
+#endif
+
+  int maxSlots = channels_->getMaxSlots();
+  bool anyReadDone = false;
+
+  for (int n = 0; n < maxSlots; ++n) {
+    int i = (n + roundRobinOffset_) % maxSlots;
+    ChannelSlot &ch = channels_->getSlot(i);
+    if (!ch.active || !ch.sshChannel) {
+      continue;
+    }
+
+    // Channels with remoteEof: still need ONE read to pump SSH transport
+    // (processes WINDOW_ADJUST for OTHER channels' writes).
+    // But don't try to store data  -  just pump and move on.
+    if (ch.remoteEof) {
+      char pumpBuf[64];
+#ifdef TUNNEL_INSTRUMENT
+      instrRead(i, ch.sshChannel, pumpBuf, sizeof(pumpBuf));
+#else
+      libssh2_channel_read(ch.sshChannel, pumpBuf, sizeof(pumpBuf));
+#endif
+      anyReadDone = true;
+      continue;
+    }
+
+    // Skip if toLocal ring is paused (too full)
+    if (ch.sshReadPaused) {
+      if (ch.toLocal && ch.toLocal->size() < ch.toLocal->capacityBytes() *
+                                                 BACKPRESSURE_LOW_PCT / 100) {
+        ch.sshReadPaused = false;
+        LOGF_D("SSH", "Channel %d: SSH read resumed (toLocal=%zu)", i,
+               ch.toLocal->size());
+      } else {
+        // Pump transport with a small read  -  store data safely in toLocal
+        // (ring is at ~75%, not 100%, so there's room for a small read).
+        // This processes WINDOW_ADJUST packets that unblock SSH writes.
+        if (ch.toLocal && ch.toLocal->available() > 0) {
+          size_t pumpSize =
+              ch.toLocal->available() < 64 ? ch.toLocal->available() : 64;
+#ifdef TUNNEL_INSTRUMENT
+          int rc = instrRead(i, ch.sshChannel, (char *)rxBuf_, pumpSize);
+#else
+          int rc =
+              libssh2_channel_read(ch.sshChannel, (char *)rxBuf_, pumpSize);
+#endif
+          anyReadDone = true;
+          if (rc > 0) {
+#ifdef TUNNEL_DIAG_LOG_ONLY
+            observeSshToLocal(i, ch, rxBuf_, rc);
+#endif
+            size_t written = ch.toLocal->write(rxBuf_, rc);
+            ch.totalBytesReceived += written;
+            lastBytesMoved_ += written;
+            ch.lastSuccessfulRead = millis();
+            ch.lastActivity = ch.lastSuccessfulRead;
+            ch.eagainCount = 0;
+            ch.firstEagainMs = 0;
+            ch.consecutiveErrors = 0;
+          } else if (rc == 0) {
+            ch.remoteEof = true;
+            LOGF_I("SSH", "Channel %d: remote EOF (paused read)", i);
+          } else if (rc != LIBSSH2_ERROR_EAGAIN) {
+            ch.consecutiveErrors++;
+            LOGF_W("SSH", "Channel %d: SSH read error %d (errors=%d)", i, rc,
+                   ch.consecutiveErrors);
+            if (ch.consecutiveErrors > 3 &&
+                ch.state == ChannelSlot::State::Open) {
+              channels_->beginClose(i, ChannelCloseReason::Error);
+            }
+          }
+        }
+        continue;
+      }
+    }
+
+    if (!ch.toLocal) {
+      continue;
+    }
+
+    // Read up to 4 chunks from SSH channel
+    for (int attempt = 0; attempt < 4; attempt++) {
+      size_t freeSpace = ch.toLocal->available();
+      if (freeSpace == 0) {
+        ch.sshReadPaused = true;
+        break;
+      }
+      size_t readSize = freeSpace < bufSize_ ? freeSpace : bufSize_;
+#ifdef TUNNEL_INSTRUMENT
+      int rc = instrRead(i, ch.sshChannel, (char *)rxBuf_, readSize);
+#else
+      int rc = libssh2_channel_read(ch.sshChannel, (char *)rxBuf_, readSize);
+#endif
+      anyReadDone = true;
+
+      if (rc > 0) {
+#ifdef TUNNEL_DIAG_LOG_ONLY
+        observeSshToLocal(i, ch, rxBuf_, rc);
+#endif
+        size_t written = ch.toLocal->write(rxBuf_, rc);
+        ch.totalBytesReceived += written;
+        lastBytesMoved_ += written;
+        ch.lastSuccessfulRead = millis();
+        ch.lastActivity = ch.lastSuccessfulRead;
+        ch.eagainCount = 0;
+        ch.firstEagainMs = 0;
+        ch.consecutiveErrors = 0;
+
+        // Check backpressure
+        if (ch.toLocal->size() >
+            ch.toLocal->capacityBytes() * BACKPRESSURE_HIGH_PCT / 100) {
+          ch.sshReadPaused = true;
+          break;
+        }
+      } else if (rc == LIBSSH2_ERROR_EAGAIN) {
+        break;
+      } else if (rc == 0) {
+        // EOF from remote  -  just set the flag, do NOT close
+        ch.remoteEof = true;
+        LOGF_I("SSH", "Channel %d: remote EOF", i);
+        break;
+      } else {
+        // Error
+        ch.consecutiveErrors++;
+        LOGF_W("SSH", "Channel %d: SSH read error %d (errors=%d)", i, rc,
+               ch.consecutiveErrors);
+        if (ch.consecutiveErrors > 3 && ch.state == ChannelSlot::State::Open) {
+          channels_->beginClose(i, ChannelCloseReason::Error);
+        }
+        break;
+      }
+    }
+
+    // Check for SSH channel EOF flag (in case libssh2 sets it without returning
+    // 0)
+    if (!ch.remoteEof && ch.sshChannel && libssh2_channel_eof(ch.sshChannel)) {
+      ch.remoteEof = true;
+      LOGF_I("SSH", "Channel %d: remote EOF (eof flag)", i);
+    }
+  }
+
+  // Fallback: if no channel was read (all paused, no remoteEof channels),
+  // pump the transport via a 1-byte read on a remoteEof channel (safe, no
+  // useful data left) or any active channel as last resort.
+  if (!anyReadDone) {
+    bool fallbackDone = false;
+    for (int i = 0; i < maxSlots; ++i) {
+      ChannelSlot &ch = channels_->getSlot(i);
+      if (ch.active && ch.sshChannel && ch.remoteEof) {
+        char pumpBuf[1];
+#ifdef TUNNEL_INSTRUMENT
+        instrRead(i, ch.sshChannel, pumpBuf, sizeof(pumpBuf));
+#else
+        libssh2_channel_read(ch.sshChannel, pumpBuf, sizeof(pumpBuf));
+#endif
+        fallbackDone = true;
+        break;
+      }
+    }
+    if (!fallbackDone) {
+      for (int i = 0; i < maxSlots; ++i) {
+        ChannelSlot &ch = channels_->getSlot(i);
+        if (ch.active && ch.sshChannel && !ch.remoteEof) {
+          char pumpBuf[1];
+#ifdef TUNNEL_INSTRUMENT
+          instrRead(i, ch.sshChannel, pumpBuf, sizeof(pumpBuf));
+#else
+          libssh2_channel_read(ch.sshChannel, pumpBuf, sizeof(pumpBuf));
+#endif
+          break;
+        }
+      }
+    }
+  }
+
+  session_->unlock();
+#ifdef TUNNEL_INSTRUMENT
+  instrSess_.phase1_us += esp_timer_get_time() - _phase1_t0;
+  instrSess_.phase1_cycles++;
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2: Drain toLocal rings -> local sockets (round-robin)
+// Uses DataRingBuffer::writeToFront() to preserve FIFO order on partial sends.
+// Data goes: ring.read() -> send(). Unsent remainder -> ring.writeToFront().
+// ---------------------------------------------------------------------------
+void TransportPump::drainSshToLocal() {
+  int maxSlots = channels_->getMaxSlots();
+  if (maxSlots == 0) {
+    return;
+  }
+
+  for (int n = 0; n < maxSlots; ++n) {
+    int i = (n + roundRobinOffset_) % maxSlots;
+    ChannelSlot &ch = channels_->getSlot(i);
+    if (!ch.active || ch.localSocket < 0 || !ch.toLocal) {
+      continue;
+    }
+
+    // Drain up to 4 chunks per channel to match Phase 1's read throughput
+    for (int attempt = 0; attempt < 4; ++attempt) {
+      if (ch.toLocal->empty()) {
+        break;
+      }
+
+      size_t available = ch.toLocal->size();
+      size_t toDrain = available < bufSize_ ? available : bufSize_;
+
+      size_t got = ch.toLocal->read(txBuf_, toDrain);
+      if (got == 0) {
+        break;
+      }
+
+      ssize_t sent = send(ch.localSocket, txBuf_, got, MSG_DONTWAIT);
+      if (sent > 0) {
+#ifdef TUNNEL_DIAG_LOG_ONLY
+        size_t remaining =
+            static_cast<size_t>(sent) < got ? got - sent : ch.toLocal->size();
+        logLocalWriteOnce(i, ch, sent, remaining);
+#endif
+        lastBytesMoved_ += sent;
+        ch.lastActivity = millis();
+        ch.firstLocalSendEagainMs = 0; // forward progress clears stall timer
+        if (static_cast<size_t>(sent) < got) {
+          // Partial send: put unsent data back at the front of the ring
+          if (ch.toLocal->writeToFront(txBuf_ + sent, got - sent) == 0) {
+            // Prepend buffer occupied  -  re-append to preserve data
+            ch.toLocal->write(txBuf_ + sent, got - sent);
+          }
+          break; // Socket can't take more right now
+        }
+      } else if (sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        ch.localEof = true;
+        LOGF_W("SSH", "Channel %d: local send error %d (%s)", i, errno,
+               strerror(errno));
+        break;
+      } else {
+        // EAGAIN/EWOULDBLOCK: put ALL data back at the front
+        if (ch.toLocal->writeToFront(txBuf_, got) == 0) {
+          ch.toLocal->write(txBuf_, got);
+        }
+        if (ch.firstLocalSendEagainMs == 0) {
+          ch.firstLocalSendEagainMs = millis();
+        }
+        break; // Socket busy, stop draining this channel
+      }
+    }
+
+    // Detect a dead local socket: EAGAIN has persisted longer than the
+    // stall timeout while the ring still has data to send. Mirrors the
+    // SSH-write stall detection in drainLocalToSsh().
+    if (ch.firstLocalSendEagainMs > 0 && ch.toLocal && !ch.toLocal->empty() &&
+        (millis() - ch.firstLocalSendEagainMs) >
+            static_cast<unsigned long>(LOCAL_SEND_STALL_TIMEOUT_MS)) {
+      LOGF_W("SSH", "Channel %d: local send stall timeout (%dms, toLocal=%zu)",
+             i, LOCAL_SEND_STALL_TIMEOUT_MS, ch.toLocal->size());
+      if (ch.state == ChannelSlot::State::Open) {
+        channels_->beginClose(i, ChannelCloseReason::Error);
+      }
+      ch.firstLocalSendEagainMs = millis(); // re-arm to avoid log spam
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3: Local sockets -> toRemote rings -> SSH channel (round-robin)
+// Single session lock for all channels, budget per channel.
+//
+// IMPORTANT: We keep reading from local socket even when remoteEof is set
+// (Draining or not), because in HTTP reverse tunnel the remote sends EOF
+// after the request, but the local web server is still sending the response.
+// ---------------------------------------------------------------------------
+void TransportPump::drainLocalToSsh() {
+#ifdef TUNNEL_INSTRUMENT
+  int64_t _phase3_t0 = esp_timer_get_time();
+#endif
+  int maxSlots = channels_->getMaxSlots();
+  if (maxSlots == 0) {
+#ifdef TUNNEL_INSTRUMENT
+    instrSess_.phase3_us += esp_timer_get_time() - _phase3_t0;
+    instrSess_.phase3_cycles++;
+#endif
+    return;
+  }
+
+  for (int n = 0; n < maxSlots; ++n) {
+    int i = (n + roundRobinOffset_) % maxSlots;
+    ChannelSlot &ch = channels_->getSlot(i);
+    if (!ch.active || !ch.sshChannel) {
+      continue;
+    }
+
+    // --- Step A: Drain toRemote -> SSH (requires session lock) ---
+    // Skip if SSH EOF already sent  -  writes would fail with error -27
+    if (ch.eofSentMs > 0) {
+      continue;
+    }
+    if (ch.toRemote && !ch.toRemote->empty()) {
+      if (session_->lock(pdMS_TO_TICKS(20))) {
+        size_t budget = MAX_WRITE_PER_CHANNEL;
+        bool hitEagain = false;
+
+        while (budget > 0 && !ch.toRemote->empty() && !hitEagain) {
+          size_t chunkSize = budget < bufSize_ ? budget : bufSize_;
+          size_t got = ch.toRemote->read(txBuf_, chunkSize);
+          if (got == 0)
+            break;
+
+#ifdef TUNNEL_INSTRUMENT
+          ssize_t written = instrWrite(i, ch.sshChannel, (char *)txBuf_, got);
+#else
+          ssize_t written =
+              libssh2_channel_write(ch.sshChannel, (char *)txBuf_, got);
+#endif
+          if (written > 0) {
+            ch.totalBytesSent += written;
+            lastBytesMoved_ += written;
+            budget -= written;
+            ch.lastSuccessfulWrite = millis();
+            ch.lastActivity = ch.lastSuccessfulWrite;
+            ch.eagainCount = 0;
+            ch.firstEagainMs = 0;
+            ch.consecutiveErrors = 0;
+            if (static_cast<size_t>(written) < got) {
+              if (ch.toRemote->writeToFront(txBuf_ + written, got - written) ==
+                  0) {
+                ch.toRemote->write(txBuf_ + written, got - written);
+              }
+              break;
+            }
+          } else if (written == LIBSSH2_ERROR_EAGAIN) {
+            if (ch.toRemote->writeToFront(txBuf_, got) == 0) {
+              ch.toRemote->write(txBuf_, got);
+            }
+            ch.eagainCount++;
+            if (ch.firstEagainMs == 0)
+              ch.firstEagainMs = millis();
+            hitEagain = true;
+          } else {
+            if (ch.toRemote->writeToFront(txBuf_, got) == 0) {
+              ch.toRemote->write(txBuf_, got);
+            }
+            ch.consecutiveErrors++;
+            LOGF_W("SSH", "Channel %d: SSH write error %ld (errors=%d)", i,
+                   (long)written, ch.consecutiveErrors);
+            if (ch.consecutiveErrors > 3 &&
+                ch.state == ChannelSlot::State::Open) {
+              channels_->beginClose(i, ChannelCloseReason::Error);
+            }
+            break;
+          }
+        }
+
+        session_->unlock();
+
+        // Check EAGAIN stall timeout (outside lock)
+        if (ch.firstEagainMs > 0 &&
+            (millis() - ch.firstEagainMs) >
+                static_cast<unsigned long>(EAGAIN_STALL_TIMEOUT_MS)) {
+          LOGF_W("SSH", "Channel %d: EAGAIN stall timeout (%dms, toRemote=%zu)",
+                 i, EAGAIN_STALL_TIMEOUT_MS, ch.toRemote->size());
+          if (ch.state == ChannelSlot::State::Open) {
+            channels_->beginClose(i, ChannelCloseReason::Error);
+          }
+          ch.firstEagainMs = millis();
+        }
+      }
+    }
+
+    // Check backpressure on toRemote (no lock needed)
+    if (ch.toRemote) {
+      size_t used = ch.toRemote->size();
+      size_t cap = ch.toRemote->capacityBytes();
+      if (ch.localReadPaused) {
+        if (used < cap * BACKPRESSURE_LOW_PCT / 100) {
+          ch.localReadPaused = false;
+          LOGF_D("SSH", "Channel %d: local read resumed (toRemote=%zu)", i,
+                 used);
+        }
+      } else if (used > cap * BACKPRESSURE_HIGH_PCT / 100) {
+        ch.localReadPaused = true;
+        LOGF_D("SSH", "Channel %d: local read paused (toRemote=%zu)", i, used);
+      }
+    }
+
+    // --- Step B: Read from local socket -> toRemote ring (no lock needed) ---
+    // Loop up to 3 reads per cycle to match Phase 1's SSH read throughput.
+    if (!ch.localEof && !ch.localReadPaused && ch.localSocket >= 0 &&
+        ch.toRemote && ch.eofSentMs == 0) {
+      for (int attempt = 0; attempt < 3 && !ch.localEof && !ch.localReadPaused;
+           ++attempt) {
+        size_t freeSpace = ch.toRemote->available();
+        if (freeSpace == 0) {
+          ch.localReadPaused = true;
+          break;
+        }
+        size_t readSize = freeSpace < bufSize_ ? freeSpace : bufSize_;
+        ssize_t recvd = recv(ch.localSocket, rxBuf_, readSize, MSG_DONTWAIT);
+        if (recvd > 0) {
+#ifdef TUNNEL_DIAG_LOG_ONLY
+          logLocalResponseOnce(i, ch, rxBuf_, recvd);
+#endif
+          ch.toRemote->write(rxBuf_, recvd);
+          ch.lastActivity = millis();
+          lastBytesMoved_ += recvd;
+        } else if (recvd == 0) {
+          ch.localEof = true;
+          LOGF_I("SSH", "Channel %d: local EOF", i);
+          break;
+        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
+          ch.localEof = true;
+          LOGF_W("SSH", "Channel %d: local recv error %d (%s)", i, errno,
+                 strerror(errno));
+          break;
+        } else {
+          break; // EAGAIN  -  socket has no more data right now
+        }
+      }
+    }
+  }
+
+  roundRobinOffset_++;
+#ifdef TUNNEL_INSTRUMENT
+  instrSess_.phase3_us += esp_timer_get_time() - _phase3_t0;
+  instrSess_.phase3_cycles++;
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Check channel close transitions
+//
+// State machine:
+//   Open -> Draining: when BOTH remoteEof AND localEof are set,
+//                     or on consecutive errors, or on inactivity timeout.
+//   Draining (rings not empty): keep draining, wait for empty.
+//   Draining (rings empty, EOF not sent): send SSH EOF + pump transport.
+//   Draining (rings empty, EOF sent, 200ms passed): finalize close.
+//
+// The 200ms grace period after EOF lets libssh2 flush any internal buffers
+// to the TCP socket, preventing truncated HTTP responses.
+// ---------------------------------------------------------------------------
+void TransportPump::checkCloses() {
+  int maxSlots = channels_->getMaxSlots();
+  unsigned long now = millis();
+
+  // --- Step 1: Transition Open channels to Draining when appropriate ---
+  for (int i = 0; i < maxSlots; ++i) {
+    ChannelSlot &ch = channels_->getSlot(i);
+    if (!ch.active || ch.state != ChannelSlot::State::Open) {
+      continue;
+    }
+
+    // Both sides done → begin graceful drain
+    if (ch.remoteEof && ch.localEof) {
+      channels_->beginClose(i, ChannelCloseReason::RemoteClosed);
+      continue;
+    }
+
+    // Local closed first and outbound ring drained → begin graceful drain.
+    // Covers both clean local EOF (recv==0) and local send/recv errors.
+    // Without this, the channel would stall until the 30s inactivity timeout.
+    if (ch.localEof && !ch.remoteEof &&
+        (!ch.toRemote || ch.toRemote->empty())) {
+      LOGF_I("SSH", "Channel %d: local EOF, toRemote drained → closing", i);
+      channels_->beginClose(i, ChannelCloseReason::LocalClosed);
+      continue;
+    }
+
+    // Consecutive errors on an open channel
+    if (ch.consecutiveErrors > 5) {
+      channels_->beginClose(i, ChannelCloseReason::Error);
+      continue;
+    }
+
+    // Forward SSH EOF to local socket as soon as our outbound ring is
+    // drained. Without this, echo-style backends never close their side
+    // (they only echo what we send, so they have nothing to volunteer),
+    // and we burn the full HALF_CLOSE_TIMEOUT_MS on every cycle, blocking
+    // back-to-back tunnel reuse (Bug #1, Suspect B).
+    if (ch.remoteEof && !ch.localShutdownSent && ch.localSocket >= 0 &&
+        (!ch.toRemote || ch.toRemote->empty())) {
+      ::shutdown(ch.localSocket, SHUT_WR);
+      ch.localShutdownSent = true;
+    }
+
+    // Half-closed timeout: remote EOF received but local hasn't closed.
+    // For HTTP: the request is done, and if the local web server hasn't
+    // sent any data for 500ms, the response is likely complete.
+    if (ch.remoteEof && !ch.localEof && ch.lastActivity > 0 &&
+        (now - ch.lastActivity) > HALF_CLOSE_TIMEOUT_MS) {
+      bool toRemoteEmpty = !ch.toRemote || ch.toRemote->empty();
+      if (toRemoteEmpty) {
+        LOGF_I("SSH",
+               "Channel %d: half-close timeout (remote EOF, no local data for "
+               "%lums)",
+               i, now - ch.lastActivity);
+        channels_->beginClose(i, ChannelCloseReason::RemoteClosed);
+        continue;
+      }
+    }
+
+    // Full inactivity timeout (configured through setBufferConfig).
+    if (channel_inactivity::hasExpired(now, ch.lastActivity,
+                                       channelTimeoutMs_)) {
+      LOGF_W("SSH", "Channel %d: inactivity timeout (%lums)", i,
+             now - ch.lastActivity);
+      channels_->beginClose(i, ChannelCloseReason::Timeout);
+      continue;
+    }
+  }
+
+  // --- Step 2: Handle Draining channels ---
+  // Two sub-phases:
+  //   a) Rings empty but EOF not sent → send EOF + pump transport
+  //   b) EOF sent and grace period elapsed → finalize
+  // Recapture now  -  Step 1 may have called beginClose() which sets
+  // closeStartMs = millis(). Using the old `now` would cause unsigned
+  // underflow (now - closeStartMs wraps to UINT_MAX → instant timeout).
+  now = millis();
+  const int arrSize = maxSlots < 32 ? maxSlots : 32;
+  int toSendEof[arrSize];
+  int eofCount = 0;
+  int toClose[arrSize];
+  int closeCount = 0;
+
+  for (int i = 0; i < maxSlots; ++i) {
+    ChannelSlot &ch = channels_->getSlot(i);
+    if (!ch.active || ch.state != ChannelSlot::State::Draining) {
+      continue;
+    }
+
+    bool ringsEmpty = (!ch.toLocal || ch.toLocal->empty()) &&
+                      (!ch.toRemote || ch.toRemote->empty());
+    bool timedOut = (now - ch.closeStartMs) > DRAIN_TIMEOUT_MS;
+    bool tooManyErrors = ch.consecutiveErrors > 3;
+
+    // Hard deadline. The regular drain timeout above only marks the channel
+    // for finalizeClose(); when libssh2_channel_close keeps returning EAGAIN
+    // (channel write window saturated, peer not consuming) finalizeClose
+    // returns false and the slot stays Draining forever. Past this point we
+    // abandon the slot locally and let the tunnel reconnect  -  the SSH
+    // session is degraded if it can't drain a single channel for 30 s.
+    if ((now - ch.closeStartMs) > HARD_ABANDON_TIMEOUT_MS) {
+      ChannelCloseReason reason = ch.closeReason;
+      LOGF_W("SSH",
+             "Channel %d: hard abandon (stuck draining %lums, toLocal=%zu, "
+             "toRemote=%zu)  -  session degraded",
+             i, now - ch.closeStartMs, ch.toLocal ? ch.toLocal->size() : 0,
+             ch.toRemote ? ch.toRemote->size() : 0);
+      channels_->abandonSlot(i, reason);
+      sessionDegraded_ = true;
+      if (pendingCloseCount_ < MAX_CLOSE_EVENTS) {
+        pendingCloseEvents_[pendingCloseCount_++] = {i, reason};
+      }
+      continue;
+    }
+
+    if (timedOut) {
+      LOGF_W("SSH",
+             "Channel %d: drain timeout (%lums, toLocal=%zu, toRemote=%zu)", i,
+             now - ch.closeStartMs, ch.toLocal ? ch.toLocal->size() : 0,
+             ch.toRemote ? ch.toRemote->size() : 0);
+      if (closeCount < arrSize)
+        toClose[closeCount++] = i;
+    } else if (tooManyErrors) {
+      LOGF_W("SSH", "Channel %d: closing due to errors (%d)", i,
+             ch.consecutiveErrors);
+      if (closeCount < arrSize)
+        toClose[closeCount++] = i;
+    } else if (ringsEmpty) {
+      if (ch.eofSentMs == 0) {
+        // Rings drained  -  send SSH EOF first (next sub-step)
+        if (eofCount < arrSize)
+          toSendEof[eofCount++] = i;
+      } else if ((now - ch.eofSentMs) >= EOF_GRACE_MS) {
+        // Grace period elapsed  -  safe to finalize
+        LOGF_I("SSH", "Channel %d: drain complete (sent=%zu, recv=%zu)", i,
+               ch.totalBytesSent, ch.totalBytesReceived);
+        if (closeCount < arrSize)
+          toClose[closeCount++] = i;
+      }
+      // else: grace period still running, wait
+    }
+  }
+
+  // --- Step 2a: Send EOF + pump transport for channels whose rings are empty
+  // ---
+  if (eofCount > 0 && session_->lock(pdMS_TO_TICKS(100))) {
+    for (int c = 0; c < eofCount; ++c) {
+      int i = toSendEof[c];
+      ChannelSlot &ch = channels_->getSlot(i);
+      if (!ch.sshChannel) {
+        continue;
+      }
+
+      // Send SSH EOF to signal "no more data from us"
+      int rc = libssh2_channel_send_eof(ch.sshChannel);
+      if (rc == LIBSSH2_ERROR_EAGAIN) {
+        // Don't spin  -  will retry on the next loop() cycle
+        continue;
+      }
+
+      // Pump SSH transport to flush any pending outgoing data.
+      // libssh2_channel_read() as a side effect processes the outgoing queue.
+      uint8_t pumpBuf[512];
+      for (int p = 0; p < 4; p++) {
+        int pr = libssh2_channel_read(ch.sshChannel, (char *)pumpBuf,
+                                      sizeof(pumpBuf));
+        if (pr > 0 && ch.toLocal) {
+          ch.toLocal->write(reinterpret_cast<uint8_t *>(pumpBuf), pr);
+        }
+        if (pr == LIBSSH2_ERROR_EAGAIN || pr <= 0) {
+          break;
+        }
+      }
+
+      ch.eofSentMs = millis();
+      LOGF_D("SSH", "Channel %d: SSH EOF sent, grace period started", i);
+    }
+    session_->unlock();
+  }
+
+  // --- Step 2b: Finalize channels that have completed grace period ---
+  if (closeCount > 0) {
+    if (session_->lock(pdMS_TO_TICKS(200))) {
+      for (int c = 0; c < closeCount; ++c) {
+        int slot = toClose[c];
+        ChannelCloseReason reason = channels_->getSlot(slot).closeReason;
+        if (channels_->finalizeClose(slot) &&
+            pendingCloseCount_ < MAX_CLOSE_EVENTS) {
+          pendingCloseEvents_[pendingCloseCount_++] = {slot, reason};
+        }
+      }
+      session_->unlock();
+    }
+  }
+}

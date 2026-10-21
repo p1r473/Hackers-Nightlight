@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-21",
+  "scope": "TCP acceptance tools against loopback test fixtures",
+  "passed": true,
+  "unittest_methods": 21,
+  "python": "3.12.14",
+  "os": "Windows",
+  "ssh_session_tested": false,
+  "bulb_tested": false,
+  "command": "python -m unittest discover -s test -p \"test_remote_tcp*.py\" -v",
+  "coverage": [
+    "Fragmented binary transfers, including 1-byte writes",
+    "Three 1 MiB cycles through the actual checker and echo-service CLIs",
+    "Write half-close, exact response bytes and mandatory receive EOF",
+    "Corruption, truncation, extra bytes, early close and silent peer rejection",
+    "Complete response without EOF and late EOF rejection",
+    "Rate-limited echo and delayed client reads",
+    "Finite service lifetime, including an idle connected peer",
+    "Loopback default, explicit RFC1918 opt-in and invalid-input rejection"
+  ],
+  "fixes": [
+    "Use a high-resolution elapsed-time clock and guard zero-duration throughput.",
+    "Reject completion observed after the overall cycle deadline."
+  ],
+  "local_qa": {
+    "host": "FlyingDutchman",
+    "model": "qwen38-fast-27b-opt:latest",
+    "scope": "Evidence and conclusion review",
+    "disposition": "Keep conclusions limited to the fixture set. Reviewer claims about partial TCP EOF and protocol framing do not apply to this transparent TCP echo checker. Fault-peer tests were independently inspected. Two broader source reviews exhausted model output without an answer."
+  },
+  "sources_sha256_lf": {
+    "tools/remote_tcp_check.py": "07f8bfa8c806b78532380fd37be9c3399c199e43b2f58a58308f36cd20cd1e8e",
+    "tools/lab_echo.py": "618aec1ba8b7e3c058c06720a94293cd711d3069dc8300193b34ffc79a0e320b",
+    "tools/vendor/ssh_pattern.py": "763cbbbf11720e54d091254de08625d2cf9835d44d1ae2781f975eafbe7f6662",
+    "test/test_remote_tcp_check.py": "afc4754222659f3021014eb196137df6a6b2ceb46679e5d341087d806f44a051",
+    "test/test_remote_tcp_cli.py": "8e58d909f1206b762eee6f8c4db77d1ea7d7b39ef3c2fc0437c131c44fbe7027"
+  },
+  "limitations": [
+    "No real SSH authentication or forwarding session.",
+    "No device identity, bulb memory, radio, throughput or recovery evidence.",
+    "Synthetic TCP success must not be reported as the hardware POC."
+  ]
+}

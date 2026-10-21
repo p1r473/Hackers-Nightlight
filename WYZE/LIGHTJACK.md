@@ -48,7 +48,7 @@ The second test uses the real adapter with host SDK doubles to check early start
 
 ## Remaining boundaries
 
-This preserves the upstream shared Wi-Fi password and unauthenticated HTTP management. Use only an isolated authorized laboratory. The separate authenticated HTTPS diagnostic application has a different security model; do not attribute its authentication to this target. No public relay or off-site TCP path is implemented here.
+This preserves the upstream shared Wi-Fi password and unauthenticated HTTP management. Use only an isolated authorized laboratory. The separate authenticated HTTPS diagnostic application has a different security model; do not attribute its authentication to this target. An optional [SSH remote TCP target](LIGHTJACK-REMOTE.md) now compiles and has host checks. Its default build has no credentials, and no real SSH session, public relay or off-site path has been tested.
 
 Verify the actual bulb model, firmware, chip revision, partitions and full private backup before any write. Then test boot, LED mapping, actual off behavior, I2C failures, power cycles, loader selection, temperatures, memory use and stability. Wyze app compatibility remains unproven. A successful build does not establish any of these hardware outcomes.
 
