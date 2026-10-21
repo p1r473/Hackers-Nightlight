@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-21",
+  "hardware_tested": false,
+  "base_commit": "0bac88ffeb195f7378a7c06843b2fff34e7f05a3",
+  "target": "lightjack_wyze_poc",
+  "platformio_core": "6.1.18",
+  "platform": "6.12.0",
+  "arduino": "2.0.17",
+  "idf": "4.4.7",
+  "image": {
+    "size_bytes": 776896,
+    "sha256": "8bbb1581d4eef1e6085ff5d4747098ea460baf7ca7d351c7a7aa580e2aa34683",
+    "slot_size_bytes": 1966080,
+    "project_name": "arduino-lib-builder",
+    "descriptor_note": "App descriptor is inherited from the pinned prebuilt Arduino SDK. Identify this application by its image hash, not that generic descriptor or its SDK compile date."
+  },
+  "linked_flash_bytes": 760202,
+  "static_ram_bytes": 37532,
+  "tests": {
+    "native_parser_receive_mapping_io_cases": 400,
+    "native_adapter_scenarios": 18,
+    "upload_guard_simulations": 7,
+    "startup_call_wrapper_verified_in_final_elf": true,
+    "image_checksum_and_validation_hash_valid": true,
+    "reference_partition_csv_exact_match": true
+  },
+  "limitations": [
+    "Host tests use simulated SDK and I2C responses, not actual ESP32 execution.",
+    "Static RAM usage excludes runtime allocations.",
+    "The inherited HTTP/shared-password management is not the separate HTTPS diagnostic application.",
+    "No public service, off-site TCP path, or hardware installation was tested.",
+    "Local focused QA reported no concrete handler/I2C defect. Its NVS already-initialized claim was rejected against pinned IDF source, which returns ESP_OK."
+  ]
+}

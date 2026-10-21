@@ -1,0 +1,75 @@
+
+firmware.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .iram0.text:
+
+Disassembly of section .flash.text:
+
+42005812 <app_main>:
+42005812:	1141                	addi	sp,sp,-16
+42005814:	3fc967b7          	lui	a5,0x3fc96
+42005818:	c606                	sw	ra,12(sp)
+4200581a:	c0078e23          	sb	zero,-996(a5) # 3fc95c1c <loopTaskWDTEnabled>
+4200581e:	f15fb0ef          	jal	ra,42001732 <__wrap_initArduino>
+42005822:	fedff0ef          	jal	ra,4200580e <_Z27getArduinoLoopTaskStackSizev>
+42005826:	40b2                	lw	ra,12(sp)
+42005828:	3fc967b7          	lui	a5,0x3fc96
+4200582c:	862a                	mv	a2,a0
+4200582e:	3c0955b7          	lui	a1,0x3c095
+42005832:	42005537          	lui	a0,0x42005
+42005836:	4801                	li	a6,0
+42005838:	c1878793          	addi	a5,a5,-1000 # 3fc95c18 <loopTaskHandle>
+4200583c:	4705                	li	a4,1
+4200583e:	4681                	li	a3,0
+42005840:	4a058593          	addi	a1,a1,1184 # 3c0954a0 <__FUNCTION__.8729+0x8>
+42005844:	7dc50513          	addi	a0,a0,2012 # 420057dc <_Z8loopTaskPv>
+42005848:	0141                	addi	sp,sp,16
+4200584a:	85bfe06f          	j	420040a4 <xTaskCreateUniversal>
+
+firmware.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .iram0.text:
+
+Disassembly of section .flash.text:
+
+42001732 <__wrap_initArduino>:
+42001732:	1101                	addi	sp,sp,-32
+42001734:	cc22                	sw	s0,24(sp)
+42001736:	3fc96437          	lui	s0,0x3fc96
+4200173a:	bec40413          	addi	s0,s0,-1044 # 3fc95bec <early_ready>
+4200173e:	ca26                	sw	s1,20(sp)
+42001740:	ce06                	sw	ra,28(sp)
+42001742:	00040023          	sb	zero,0(s0)
+42001746:	3d5d                	jal	420015fc <arm_loader>
+42001748:	84aa                	mv	s1,a0
+4200174a:	e509                	bnez	a0,42001754 <__wrap_initArduino+0x22>
+4200174c:	6820a0ef          	jal	ra,4200bdce <nvs_flash_init>
+42001750:	84aa                	mv	s1,a0
+42001752:	cd15                	beqz	a0,4200178e <__wrap_initArduino+0x5c>
+42001754:	fe38a097          	auipc	ra,0xfe38a
+42001758:	67e080e7          	jalr	1662(ra) # 4038bdd2 <esp_log_timestamp>
+4200175c:	c62a                	sw	a0,12(sp)
+4200175e:	8526                	mv	a0,s1
+42001760:	2f82e0ef          	jal	ra,4202fa58 <esp_err_to_name>
+42001764:	46b2                	lw	a3,12(sp)
+42001766:	3c0945b7          	lui	a1,0x3c094
+4200176a:	3c094637          	lui	a2,0x3c094
+4200176e:	87aa                	mv	a5,a0
+42001770:	10458713          	addi	a4,a1,260 # 3c094104 <LIGHTJACK_PAGE+0xa8c>
+42001774:	11060613          	addi	a2,a2,272 # 3c094110 <LIGHTJACK_PAGE+0xa98>
+42001778:	10458593          	addi	a1,a1,260
+4200177c:	4505                	li	a0,1
+4200177e:	751310ef          	jal	ra,420336ce <__wrap_esp_log_write>
+42001782:	4501                	li	a0,0
+42001784:	fe387097          	auipc	ra,0xfe387
+42001788:	cee080e7          	jalr	-786(ra) # 40388472 <vTaskSuspend>
+4200178c:	bfdd                	j	42001782 <__wrap_initArduino+0x50>
+4200178e:	4785                	li	a5,1
+42001790:	00f40023          	sb	a5,0(s0)
+42001794:	4462                	lw	s0,24(sp)
+42001796:	40f2                	lw	ra,28(sp)
+42001798:	44d2                	lw	s1,20(sp)
+4200179a:	6105                	addi	sp,sp,32
+4200179c:	1750206f          	j	42004110 <initArduino>
