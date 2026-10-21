@@ -24,7 +24,9 @@
     "actual_adapter_with_mock_boundaries_checks": 26,
     "base_lightjack_target_rebuild": "passed",
     "startup_wrapper_call_verified_in_final_elf": true,
-    "ssh_connect_and_ecdh_code_present_in_final_elf": true
+    "ssh_connect_and_ecdh_code_present_in_final_elf": true,
+    "tcp_tool_loopback_unittest_methods": 21,
+    "tcp_tool_evidence": "remote-tcp-results.json"
   },
   "test_compilers": {
     "native_policy": "TinyCC 0.9.27",
@@ -44,7 +46,7 @@
   },
   "limitations": [
     "Default provider is unprovisioned; no real connection was attempted.",
-    "Host tests do not exercise SSH transport, actual sockets, radio, heap peaks or physical hardware.",
+    "Firmware host tests do not exercise SSH transport, radio, heap peaks or physical hardware. Separate TCP tool fixtures exercise actual loopback sockets only.",
     "Full transfer integrity, half-close, reconnect timing, performance and memory behavior remain unverified.",
     "Inherited HTTP management remains unauthenticated and shares the upstream AP password.",
     "All generated images are excluded from the source package."

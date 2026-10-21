@@ -49,6 +49,32 @@ python tools/test_remote_upstream.py --cc cc --cxx c++
 
 Recorded evidence is in [verification/remote-results.json](verification/remote-results.json). The current image is 1,006,432 bytes in a 1,966,080-byte application slot. Reported static RAM is 40,324 bytes, which excludes heap, worker stack, packet queues and cryptographic runtime allocations.
 
+## Transfer acceptance tools
+
+The stdlib-only Python tools reuse the upstream deterministic binary pattern and echo-service design. They do not start Docker, configure SSH, create keys, or change a firewall. Start a temporary test service in one terminal:
+
+```sh
+python tools/lab_echo.py --port 8000 --seconds 300
+```
+
+Check that direct loopback endpoint from another terminal:
+
+```sh
+python tools/remote_tcp_check.py --port 8000 --size 1048576 --chunk 257 --cycles 3
+```
+
+This direct loopback command tests the tools only. During a later bulb trial, run the echo service at the configured target and run the checker against the actual relay listener port instead. An RFC1918 laboratory address requires `--host` and `--allow-lan` explicitly; public addresses, hostnames and all-interface binding are rejected. The server accepts `--port 0` to allocate and print a temporary port. The checker requires the actual printed port, never zero.
+
+The checker sends and receives concurrently, handles partial sends, compares every byte and SHA256, sends a write half-close after the payload, and requires both the exact response length and receive EOF within one deadline. Corruption, truncation, extra bytes, early close, missing EOF and late completion fail with a nonzero exit code and a JSON error. `--read-delay` slows the receiver; server `--rate` limits echo bytes per second. `--timeout` bounds each checker cycle, up to 300 seconds. The echo service handles one connection at a time, closes an idle or blocked connection after a two-second socket timeout, and exits after its configured lifetime, up to one hour.
+
+Run the fixture and command-line tests with:
+
+```sh
+python -m unittest discover -s test -p "test_remote_tcp*.py" -v
+```
+
+Results in [verification/remote-tcp-results.json](verification/remote-tcp-results.json) cover the acceptance tools against real local sockets, including deliberately faulty peers. They do not prove SSH authentication, the forwarding path, radio behavior or bulb performance. An echo alone cannot identify which device forwarded the bytes, so reports explicitly set `ssh_or_device_identity_verified` to false. Correlate a future relay test with the bulb and relay session logs, then disconnect the bulb session and verify that the relay port stops forwarding. Test wrong host pins and unauthorized keys separately.
+
 ## Memory profile and upstream changes
 
 - One active channel, one pending channel, one deferred-close slot and one reverse listener.
